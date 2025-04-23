@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-cn" >
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<meta name="description" content="">
+	<meta name="keywords" content="">
+	<title>pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题 - My Blog</title>
+    <link rel="alternate" href="" type="application/atom+xml"/>
+	<link rel="shortcut icon" href=""/>
+	
+<link rel="stylesheet" href="/css/style.css">
+
+	
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+	<div class="main-con">
+
+        <div class="nav cl">
+    <ul class="cl nav-list">
+        
+            <li>
+                
+                    <a href="/" class="">
+                        <i class="fa fa-home"></i> 
+                        <span>主页</span>
+                    </a>
+                
+            </li>
+        
+            <li>
+                
+                    <a href="/archives/" class="">
+                        <i class=" fa-"></i> 
+                        <span>归档</span>
+                    </a>
+                
+            </li>
+        
+    </ul>
+    <ul class="cl nav-tool">
+        
+        
+        <li>
+            <a href="javascript:void(0)" class="nav-search-btn">
+                <i class="fa fa-search"></i>
+            </a>
+        </li>
+        
+    </ul>
+    <form action="//google.com/search" method="get" accept-charset="UTF-8" class="nav-search"><input type="search" name="q" class="nav-search-input" placeholder="search..."><input type="hidden" name="sitesearch" value="http://b.iakb.org"></form>
+</div>
+
+        <header class="top" id="" style="background-image: url(/imgs/head.jpg)">
+    <i class="fa fa-bars" id="media-toggle" style="display: none"></i>
+    <div class="top-info cl fadeToBottom">
+        <h2 class="site-name"><a href="/">j1ans</a> <small id="type-data">一些笔记</small></h2>
+    </div>
+</header>
+
+        <div class="con-wrap fadeToTop">
+    
+    <section class="article-area">
+    
+        <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
+                pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-04-23
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <p>之前符号都很正常 知道开始做IO_FILE题目，更换glibc版本后一直找不到_IO_FILE的符号</p>
+<p>一开始以为是glibc_all_in_one没有下载debug的glibc 然后看了一下download的输出是有的</p>
+<p>放在了.debug目录 查了好久都说pwndbg会自己加载 然后看了pwndbg说glibc没有符号</p>
+<p>终于找到了解决方案 看到了这位师傅的文章<a target="_blank" rel="noopener" href="https://www.cnblogs.com/9man/p/17741818.html">https://www.cnblogs.com/9man/p/17741818.html</a></p>
+<h1 id="脚本获取，配置"><a href="#脚本获取，配置" class="headerlink" title="脚本获取，配置"></a>脚本获取，配置</h1><p>执行<code>vim ~/.pwndbg/gdbinit.py</code><br>然后复制下方代码到最底下，然后输入<code>:wq</code>回车，保存退出。</p>
+<p>我改了一下添加的脚本<br>import gdb<br>import os<br>from pathlib import Path</p>
+<h1 id="ANSI颜色转义码"><a href="#ANSI颜色转义码" class="headerlink" title="ANSI颜色转义码"></a>ANSI颜色转义码</h1><p>COLOR_GREEN &#x3D; “\033[32m”  # 绿色<br>COLOR_RED &#x3D; “\033[31m”    # 红色<br>COLOR_RESET &#x3D; “\033[0m”   # 重置颜色</p>
+<h1 id="递归加载符号文件的函数"><a href="#递归加载符号文件的函数" class="headerlink" title="递归加载符号文件的函数"></a>递归加载符号文件的函数</h1><p>def load_symbols_recursive(folder_path):<br>    # 获取文件夹下的所有内容，包括子文件夹<br>    items &#x3D; os.listdir(folder_path)</p>
+<pre><code>for item in items:
+    item_path = os.path.join(folder_path, item)
+
+    if os.path.isfile(item_path):
+        try:
+            gdb.execute(&quot;add-symbol-file &#123;&#125;&quot;.format(item_path))
+            print(COLOR_GREEN + &quot;[+] Loaded symbols &quot; + COLOR_RESET + &quot;from &#123;&#125;&quot;.format(item_path))
+        except gdb.error as e:
+            print(COLOR_RED + &quot;[-] Failed to load&quot; + COLOR_RESET + &quot; symbols from &#123;&#125;: &#123;&#125;&quot;.format(item_path, e))
+    elif os.path.isdir(item_path):
+        load_symbols_recursive(item_path)  # 递归处理子文件夹
+</code></pre>
+<h1 id="创建一个自定义的GDB命令，用于加载libc路径对应的-debug符号"><a href="#创建一个自定义的GDB命令，用于加载libc路径对应的-debug符号" class="headerlink" title="创建一个自定义的GDB命令，用于加载libc路径对应的.debug符号"></a>创建一个自定义的GDB命令，用于加载libc路径对应的.debug符号</h1><p>class LoadLibcDebugSymbols(gdb.Command):<br>    def <strong>init</strong>(self):<br>        super(LoadLibcDebugSymbols, self).<strong>init</strong>(“loadlibc”, gdb.COMMAND_USER)</p>
+<pre><code class="hljs python"><span class="hljs-keyword">import</span> gdb
+<span class="hljs-keyword">import</span> os
+<span class="hljs-keyword">from</span> pathlib <span class="hljs-keyword">import</span> Path
+
+<span class="hljs-comment"># ANSI颜色转义码</span>
+COLOR_GREEN = <span class="hljs-string">&quot;\033[32m&quot;</span>  <span class="hljs-comment"># 绿色</span>
+COLOR_RED = <span class="hljs-string">&quot;\033[31m&quot;</span>    <span class="hljs-comment"># 红色</span>
+COLOR_RESET = <span class="hljs-string">&quot;\033[0m&quot;</span>   <span class="hljs-comment"># 重置颜色</span>
+
+<span class="hljs-comment"># 递归加载符号文件的函数</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">load_symbols_recursive</span>(<span class="hljs-params">folder_path</span>):
+    <span class="hljs-comment"># 获取文件夹下的所有内容，包括子文件夹</span>
+    items = os.listdir(folder_path)
+
+    <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> items:
+        item_path = os.path.join(folder_path, item)
+
+        <span class="hljs-keyword">if</span> os.path.isfile(item_path):
+            <span class="hljs-keyword">try</span>:
+                gdb.execute(<span class="hljs-string">&quot;add-symbol-file &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(item_path))
+                <span class="hljs-built_in">print</span>(COLOR_GREEN + <span class="hljs-string">&quot;[+] Loaded symbols &quot;</span> + COLOR_RESET + <span class="hljs-string">&quot;from &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(item_path))
+            <span class="hljs-keyword">except</span> gdb.error <span class="hljs-keyword">as</span> e:
+                <span class="hljs-built_in">print</span>(COLOR_RED + <span class="hljs-string">&quot;[-] Failed to load&quot;</span> + COLOR_RESET + <span class="hljs-string">&quot; symbols from &#123;&#125;: &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(item_path, e))
+        <span class="hljs-keyword">elif</span> os.path.isdir(item_path):
+            load_symbols_recursive(item_path)  <span class="hljs-comment"># 递归处理子文件夹</span>
+
+<span class="hljs-comment"># 创建一个自定义的GDB命令，用于加载libc路径对应的.debug符号</span>
+<span class="hljs-keyword">class</span> <span class="hljs-title class_">LoadLibcDebugSymbols</span>(gdb.Command):
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):
+        <span class="hljs-built_in">super</span>(LoadLibcDebugSymbols, <span class="hljs-variable language_">self</span>).__init__(<span class="hljs-string">&quot;loadlibc&quot;</span>, gdb.COMMAND_USER)
+
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">invoke</span>(<span class="hljs-params">self, arg, from_tty</span>):
+        <span class="hljs-comment"># 解析参数为libc路径</span>
+        libc_path = arg.strip()
+
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> libc_path:
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Usage: loadlibc &lt;libc_path&gt;&quot;</span>)
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Example: loadlibc /home/rick/glibc-all-in-one/libs/2.35-0ubuntu3_amd64/libc.so.6&quot;</span>)
+            <span class="hljs-keyword">return</span>
+
+        <span class="hljs-comment"># 检查文件是否存在</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> os.path.exists(libc_path) <span class="hljs-keyword">or</span> <span class="hljs-keyword">not</span> os.path.isfile(libc_path):
+            <span class="hljs-built_in">print</span>(COLOR_RED + <span class="hljs-string">&quot;[-] Libc file does not exist: &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(libc_path) + COLOR_RESET)
+            <span class="hljs-keyword">return</span>
+
+        <span class="hljs-comment"># 获取.debug文件夹路径</span>
+        libc_dir = os.path.dirname(libc_path)
+        debug_dir = os.path.join(libc_dir, <span class="hljs-string">&quot;.debug&quot;</span>)
+
+        <span class="hljs-comment"># 检查.debug文件夹是否存在</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> os.path.exists(debug_dir) <span class="hljs-keyword">or</span> <span class="hljs-keyword">not</span> os.path.isdir(debug_dir):
+            <span class="hljs-built_in">print</span>(COLOR_RED + <span class="hljs-string">&quot;[-] .debug folder does not exist in: &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(libc_dir) + COLOR_RESET)
+            <span class="hljs-keyword">return</span>
+
+        <span class="hljs-comment"># 先加载libc本身的符号</span>
+        <span class="hljs-keyword">try</span>:
+            gdb.execute(<span class="hljs-string">&quot;sharedlibrary libc.so.6&quot;</span>)
+            <span class="hljs-built_in">print</span>(COLOR_GREEN + <span class="hljs-string">&quot;[+] Loaded libc.so.6 symbols&quot;</span> + COLOR_RESET)
+        <span class="hljs-keyword">except</span> gdb.error <span class="hljs-keyword">as</span> e:
+            <span class="hljs-built_in">print</span>(COLOR_RED + <span class="hljs-string">&quot;[-] Failed to load libc.so.6 symbols: &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(e) + COLOR_RESET)
+
+        <span class="hljs-comment"># 然后加载.debug文件夹中的符号</span>
+        <span class="hljs-built_in">print</span>(COLOR_GREEN + <span class="hljs-string">&quot;[*] Loading debug symbols from: &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(debug_dir) + COLOR_RESET)
+        load_symbols_recursive(debug_dir)
+
+LoadLibcDebugSymbols()</code></pre>
+
+<blockquote>
+<p>用法:loadlibc [libc路径]</p>
+<p>会自动查找libc路径下的.debug文件夹并且加载符号 </p>
+</blockquote>
+
+        </div>
+        
+        
+        
+        <div class="article-tags">
+            <ul class="tags-list cl">
+                
+                <li><a href="/tags/glibc/"><i class="fa fa-tag"></i>glibc</a></li>
+                
+                <li><a href="/tags/问题/"><i class="fa fa-tag"></i>问题</a></li>
+                
+                <li><a href="/tags/解决/"><i class="fa fa-tag"></i>解决</a></li>
+                
+                <li><a href="/tags/记录/"><i class="fa fa-tag"></i>记录</a></li>
+                
+                <li><a href="/tags/笔记/"><i class="fa fa-tag"></i>笔记</a></li>
+                
+                <li><a href="/tags/pwngdb/"><i class="fa fa-tag"></i>pwngdb</a></li>
+                
+                <li><a href="/tags/debug-symbol/"><i class="fa fa-tag"></i>debug-symbol</a></li>
+                
+            </ul>
+        </div>
+        
+        <div class="article-pagination cl">
+        
+            <div class="pagination-prev">
+                <a href="/2025/04/23/%E5%B7%85%E5%B3%B0%E6%9E%81%E5%AE%A2-2022-happy-note-%E9%AB%98%E7%89%88%E6%9C%ACglibc-IO-FILE%E5%88%9D%E6%8E%A2/">[巅峰极客 2022]happy note - 高版本glibc _IO_FILE初探</a>
+            </div>
+        
+        
+            <div class="pagination-next">
+                <a href="/2025/04/21/SUCTF-2018-%E6%8B%9B%E6%96%B0%E8%B5%9B-unlink/">[SUCTF 2018 招新赛]unlink</a>
+            </div>
+        
+        </div>
+
+        
+    </div>
+</article>
+
+    </section>
+    
+<section class="tool-area">
+
+    <div class="toolbar">
+        
+
+        
+        <div class="widget-post widget" style="order: 1 ">
+            <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/%E5%B7%85%E5%B3%B0%E6%9E%81%E5%AE%A2-2022-happy-note-%E9%AB%98%E7%89%88%E6%9C%ACglibc-IO-FILE%E5%88%9D%E6%8E%A2/">[巅峰极客 2022]happy note - 高版本glibc _IO_FILE初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/pwngdb%E8%A7%A3%E5%86%B3%E6%9B%B4%E6%8D%A2libc%E5%90%8E%E4%B8%8D%E5%8A%A0%E8%BD%BD%E7%AC%A6%E5%8F%B7-IO-FILE%E7%AD%89%E7%BB%93%E6%9E%84%E6%B2%A1%E6%9C%89%E7%AC%A6%E5%8F%B7%E7%9A%84%E9%97%AE%E9%A2%98/">pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/21/SUCTF-2018-%E6%8B%9B%E6%96%B0%E8%B5%9B-unlink/">[SUCTF 2018 招新赛]unlink</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/21/%E7%BE%8A%E5%9F%8E%E6%9D%AF-2023-%E5%86%B3%E8%B5%9B-Printf-but-not-fmtstr/">[羊城杯 2023 决赛]Printf but not fmtstr</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ORW2/">ORW2</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E7%AE%80%E5%8D%95ORW%E5%88%9D%E6%8E%A2/">简单ORW初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/2-34-%E9%AB%98%E7%89%88%E6%9C%AClibc-safe-linking-%E5%88%9D%E4%BD%93%E9%AA%8C-%E8%A2%AB%E6%81%B6%E5%BF%83%E6%AD%BB%E4%BA%86/">2.34 高版本libc safe-linking 初体验 (被恶心死了)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E5%85%A5%E9%97%A8%E7%9A%84UAF/">入门的UAF</a></li></ul>
+        </div>
+        
+
+        
+        <div class="widget-tags widget" style="order: 2 ">
+            <h2 class="widget-title"><i class="fa fa-tags"></i> 标签</h2>
+            <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/malloc-hook/" style="font-size: 12px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/glibc/" style="font-size: 16px;">glibc</a> <a href="/tags/heap/" style="font-size: 18px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 12px;">orw</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 12px;">shellcode</a> <a href="/tags/stack/" style="font-size: 12px;">stack</a> <a href="/tags/tcache/" style="font-size: 14px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 12px;">unlink</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 12px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
+        </div>
+        
+
+        
+        <div class="widget-categories widget" style="order: 3 ">
+            <h2 class="widget-title"><i class="fa fa-folder-open"></i> 分类</h2>
+            
+        </div>
+        
+
+    </div>
+</section>
+</div>
+
+    
+        <footer class="footer">
+	<p class="footer-intro">
+		
+		@2025 My Blog.
+	</p>
+	<p class="footer-intro">
+			Powered By <a href="https://hexo.io/zh-cn/" target="_blank">hexo</a>
+			theme <a href="https://github.com/iengu/hexo-theme-mokusei" target="_blank">mokusei</a> by <a href="https://www.iengu.com" target="blank">iengu</a>
+	</p>
+</footer>
+
+
+
+
+        <div class="extend-tools" id="extend-tools" style="display: none;">
+    <ul>
+        <li class="tools-returnTop" title="返回顶部"><i class="fa fa-angle-double-up"></i></li>
+    </ul>
+</div>
+
+	</div>
+
+	
+<script src="/js/org/jquery.min.js"></script>
+
+    
+<script src="/js/extend.js"></script>
+
+</body>
+</html>
