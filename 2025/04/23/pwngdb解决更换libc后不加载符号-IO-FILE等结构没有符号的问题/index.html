@@ -93,22 +93,7 @@
 <p>放在了.debug目录 查了好久都说pwndbg会自己加载 然后看了pwndbg说glibc没有符号</p>
 <p>终于找到了解决方案 看到了这位师傅的文章<a target="_blank" rel="noopener" href="https://www.cnblogs.com/9man/p/17741818.html">https://www.cnblogs.com/9man/p/17741818.html</a></p>
 <h1 id="脚本获取，配置"><a href="#脚本获取，配置" class="headerlink" title="脚本获取，配置"></a>脚本获取，配置</h1><p>执行<code>vim ~/.pwndbg/gdbinit.py</code><br>然后复制下方代码到最底下，然后输入<code>:wq</code>回车，保存退出。</p>
-<p>我改了一下添加的脚本<br>import gdb<br>import os<br>from pathlib import Path</p>
-<h1 id="ANSI颜色转义码"><a href="#ANSI颜色转义码" class="headerlink" title="ANSI颜色转义码"></a>ANSI颜色转义码</h1><p>COLOR_GREEN &#x3D; “\033[32m”  # 绿色<br>COLOR_RED &#x3D; “\033[31m”    # 红色<br>COLOR_RESET &#x3D; “\033[0m”   # 重置颜色</p>
-<h1 id="递归加载符号文件的函数"><a href="#递归加载符号文件的函数" class="headerlink" title="递归加载符号文件的函数"></a>递归加载符号文件的函数</h1><p>def load_symbols_recursive(folder_path):<br>    # 获取文件夹下的所有内容，包括子文件夹<br>    items &#x3D; os.listdir(folder_path)</p>
-<pre><code>for item in items:
-    item_path = os.path.join(folder_path, item)
-
-    if os.path.isfile(item_path):
-        try:
-            gdb.execute(&quot;add-symbol-file &#123;&#125;&quot;.format(item_path))
-            print(COLOR_GREEN + &quot;[+] Loaded symbols &quot; + COLOR_RESET + &quot;from &#123;&#125;&quot;.format(item_path))
-        except gdb.error as e:
-            print(COLOR_RED + &quot;[-] Failed to load&quot; + COLOR_RESET + &quot; symbols from &#123;&#125;: &#123;&#125;&quot;.format(item_path, e))
-    elif os.path.isdir(item_path):
-        load_symbols_recursive(item_path)  # 递归处理子文件夹
-</code></pre>
-<h1 id="创建一个自定义的GDB命令，用于加载libc路径对应的-debug符号"><a href="#创建一个自定义的GDB命令，用于加载libc路径对应的-debug符号" class="headerlink" title="创建一个自定义的GDB命令，用于加载libc路径对应的.debug符号"></a>创建一个自定义的GDB命令，用于加载libc路径对应的.debug符号</h1><p>class LoadLibcDebugSymbols(gdb.Command):<br>    def <strong>init</strong>(self):<br>        super(LoadLibcDebugSymbols, self).<strong>init</strong>(“loadlibc”, gdb.COMMAND_USER)</p>
+<p>我改了一下添加的脚本</p>
 <pre><code class="hljs python"><span class="hljs-keyword">import</span> gdb
 <span class="hljs-keyword">import</span> os
 <span class="hljs-keyword">from</span> pathlib <span class="hljs-keyword">import</span> Path
