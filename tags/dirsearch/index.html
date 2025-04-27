@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-cn" >
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<meta name="description" content="">
+	<meta name="keywords" content="">
+	<title>dirsearch - My Blog</title>
+    <link rel="alternate" href="" type="application/atom+xml"/>
+	<link rel="shortcut icon" href=""/>
+	
+<link rel="stylesheet" href="/css/style.css">
+
+	
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+	<div class="main-con">
+
+        <div class="nav cl">
+    <ul class="cl nav-list">
+        
+            <li>
+                
+                    <a href="/" class="">
+                        <i class="fa fa-home"></i> 
+                        <span>主页</span>
+                    </a>
+                
+            </li>
+        
+            <li>
+                
+                    <a href="/archives/" class="">
+                        <i class=" fa-"></i> 
+                        <span>归档</span>
+                    </a>
+                
+            </li>
+        
+    </ul>
+    <ul class="cl nav-tool">
+        
+        
+        <li>
+            <a href="javascript:void(0)" class="nav-search-btn">
+                <i class="fa fa-search"></i>
+            </a>
+        </li>
+        
+    </ul>
+    <form action="//google.com/search" method="get" accept-charset="UTF-8" class="nav-search"><input type="search" name="q" class="nav-search-input" placeholder="search..."><input type="hidden" name="sitesearch" value="http://b.iakb.org"></form>
+</div>
+
+        <header class="top" id="" style="background-image: url(/imgs/head.jpg)">
+    <i class="fa fa-bars" id="media-toggle" style="display: none"></i>
+    <div class="top-info cl fadeToBottom">
+        <h2 class="site-name"><a href="/">j1ans</a> <small id="type-data">一些笔记</small></h2>
+    </div>
+</header>
+
+        <div class="column-title fadeToTop">
+    <h3><span class="title-info">标签</span> dirsearch</h3>
+</div>
+
+<div class="con-wrap fadeToTop">
+    
+    <section class="article-area">
+    
+        
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
+                <a href="/2025/04/27/从0开始的web生涯-第五空间-2021-WebFTP/" title="从0开始的web生涯 - [第五空间 2021]WebFTP">
+                    从0开始的web生涯 - [第五空间 2021]WebFTP
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-04-27
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <p>目录扫描 信息收集 .git泄露</p>
+<p>虽然没怎么接触 盲猜是扫目录 + 扫端口 没怎么接触过kali</p>
+<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427134740449.png" alt="image-20250427134740449"></p>
+<p>扫目录好像是dirsearch 这边装的没找见 更新下源</p>
+<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427134825901.png" alt="image-20250427134825901"></p>
+<p>装上咯</p>
+<blockquote>
+<p>Dirsearch的使用非常简单，只需要在终端中输入相应的命令即可。以下是一些常用的命令选项：</p>
+<p>-u：指定目标URL。<br>-e：指定要扫描的文件扩展名（多个扩展名之间用逗号分隔）。<br>-w：指定自定义的字典文件（用于生成扫描路径）。<br>-o：指定输出格式（支持json、csv、txt等）。<br>-r 递归目录（跑出目录后，继续跑目录下面的目录<br>–random-agents 使用随机UA<br>–threads：设置扫描线程数（默认为10）。<br>例如，要扫描目标URL <a target="_blank" rel="noopener" href="http://example.com/">http://example.com</a> 并输出为JSON格式，可以使用以下命令：</p>
+</blockquote>
+<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427135004070.png" alt="image-20250427135004070"></p>
+<p>就放在相对目录下的.git 既然提示了git泄露 </p>
+<blockquote>
+<p>通过访问&#x2F;.git&#x2F;config文件可以正常的访问，config的配置信息中，我们可以看到以下的内容：</p>
+<ul>
+<li>版本控制系统信息: repositoryformatversion &#x3D; 0，表明这是 Git 版本 1 的配置。</li>
+<li>仓库类型: bare &#x3D; false，表明这是工作目录，并非裸仓库。</li>
+<li>分支信息: 包含 master 和 localize 两个分支的信息。</li>
+<li>远程仓库地址: url &#x3D; XXXXXXXX:XXXXXXXX&#x2F;radiodetali.git，攻击者通过这个信息可以获取到远程仓库的地址，甚至通过其他漏洞进一步入侵远程仓库。</li>
+</ul>
+</blockquote>
+<p><a target="_blank" rel="noopener" href="http://node7.anna.nssctf.cn:28653/.git/config">http://node7.anna.nssctf.cn:28653/.git/config</a></p>
+<pre><code class="hljs git">[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+	ignorecase = true
+	precomposeunicode = true
+[remote &quot;origin&quot;]
+	url = https://github.com/wifeat/WebFTP.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch &quot;master&quot;]
+	remote = origin
+	merge = refs/heads/master</code></pre>
+
+<p>去github找readme发现默认账号密码</p>
+<blockquote>
+<p>使用说明 1、初始账号 超级管理员 admin 密码 admin888</p>
+</blockquote>
+<p>找老半天找到flag 在phpinfo的environment里面 真傻逼</p>
+<p>还可以通过.git 找到<img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427140558753.png" alt="image-20250427140558753"></p>
+<p>打开是admin 的 密码 md5</p>
+<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427140627384.png" alt="image-20250427140627384"></p>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+        <ul class="pagination clear">
+    <span class="page-number current">1</span>
+</ul>
+    </section>
+    
+<section class="tool-area">
+
+    <div class="toolbar">
+        
+
+        
+        <div class="widget-post widget" style="order: 1 ">
+            <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-Do-you-know-http/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]ez_unserialize</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/">从0开始的web生涯 - [第五空间 2021]WebFTP</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-babyrce/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]babyrce</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/24/%E8%AE%B0%E4%B8%80%E6%AC%A1vmware-linux%E6%89%A9%E5%B1%95-%E6%A0%B9%E7%9B%AE%E5%BD%95-%E5%88%86%E5%8C%BA/">记一次vmware linux扩展/(根目录)分区</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/2021-%E9%95%BF%E5%9F%8E%E6%9D%AF-%E9%99%A2%E6%A0%A1%E7%BB%84-K1ng-in-h3ap-I-stdout%E6%B3%84%E9%9C%B2libc%E5%88%9D%E6%8E%A2/">[2021 长城杯_院校组]K1ng_in_h3ap_I - stdout泄露libc初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/23/%E5%B7%85%E5%B3%B0%E6%9E%81%E5%AE%A2-2022-happy-note-%E9%AB%98%E7%89%88%E6%9C%ACglibc-IO-FILE%E5%88%9D%E6%8E%A2/">[巅峰极客 2022]happy note - 高版本glibc _IO_FILE初探</a></li></ul>
+        </div>
+        
+
+        
+        <div class="widget-tags widget" style="order: 2 ">
+            <h2 class="widget-title"><i class="fa fa-tags"></i> 标签</h2>
+            <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
+        </div>
+        
+
+        
+        <div class="widget-categories widget" style="order: 3 ">
+            <h2 class="widget-title"><i class="fa fa-folder-open"></i> 分类</h2>
+            
+        </div>
+        
+
+    </div>
+</section>
+</div>
+
+    
+        <footer class="footer">
+	<p class="footer-intro">
+		
+		@2025 My Blog.
+	</p>
+	<p class="footer-intro">
+			Powered By <a href="https://hexo.io/zh-cn/" target="_blank">hexo</a>
+			theme <a href="https://github.com/iengu/hexo-theme-mokusei" target="_blank">mokusei</a> by <a href="https://www.iengu.com" target="blank">iengu</a>
+	</p>
+</footer>
+
+
+
+
+        <div class="extend-tools" id="extend-tools" style="display: none;">
+    <ul>
+        <li class="tools-returnTop" title="返回顶部"><i class="fa fa-angle-double-up"></i></li>
+    </ul>
+</div>
+
+	</div>
+
+	
+<script src="/js/org/jquery.min.js"></script>
+
+    
+<script src="/js/extend.js"></script>
+
+</body>
+</html>
