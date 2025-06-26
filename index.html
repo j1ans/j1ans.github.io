@@ -96,8 +96,7 @@
             
             <p>The Wincor Nixdorf PORT IO Driver ‘wnport.sys’ was found to have multiple stack overflow vulnerabilities.</p>
 <p>Driver Download Link <a target="_blank" rel="noopener" href="https://driverpack.io/en/hwids/ROOT%5CWNPORT">https://driverpack.io/en/hwids/ROOT%5CWNPORT</a></p>
-<img src="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626232106183.png" class="" title="image-20250626232106183">
-
+<p><img src="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626232106183.png" alt="image-20250626232106183"></p>
 <p>The Driver ‘s <strong>Digital Signature</strong>. though it’s has not WHQL signature. is still permitted to be loaded by the latest version of Windows. However, for drivers with valid digital signatures issued before this policy update, Windows maintains compatibility by allowing them to bypass the WHQL requirement. </p>
 <p>Therefore, this driver may still have an impact on the new 32-bit version of Windows.</p>
 <p>The <code>IOCTL_DEVICEIO_CONTROL_FUNCTION</code> subroutine at <code>sub_11100</code> contains multiple IOCTL handlers that can trigger stack overflow conditions. Specifically, the following IOCTL codes are affected:</p>
@@ -107,14 +106,11 @@
 <li><code>0x80102050</code></li>
 <li><code>0x80102054</code></li>
 </ul>
-<img src="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626232659410.png" class="" title="image-20250626232659410">
-
+<p><img src="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626232659410.png" alt="image-20250626232659410"></p>
 <p>The <code>MaxCount</code> parameter actually represents the input buffer length, while <code>CommitSize</code> is constrained to a maximum of four <code>size_t</code> units. Consequently, a stack overflow will occur if the input buffer length exceeds the <code>CommitSize</code>.</p>
-<img src="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626233012724.png" class="" title="image-20250626233012724">
-
+<p><img src="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626233012724.png" alt="image-20250626233012724"></p>
 <p>After using <code>DeviceIoControl</code> to send a large input buffer that exceeds the driver’s internal stack allocation , the system may encounter a stack overflow condition. This occurs because the driver’s IOCTL handler at sub_11100 processes the buffer without proper bounds checking, leading to memory corruption.</p>
-<img src="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626233051235.png" class="" title="image-20250626233051235">
-
+<p><img src="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626233051235.png" alt="image-20250626233051235"></p>
 <p>This driver has triggered a <strong>PAGE_FAULT_NON_PAGE</strong> blue screen error, resulting in the system crashing., disrupting system operation by causing improper access to non-paged memory. Beyond the immediate system crash, its vulnerabilities can lead to memory corruption, enabling malicious entities to manipulate critical memory areas. In the worst - case scenario, it allows for arbitrary code execution, giving attackers the ability to run unauthorized commands with elevated privileges. What’s more concerning is that the driver’s IOCTL functions can be called by low - privileged programs, making it easier for attackers to exploit these flaws and undermine system integrity.</p>
 
         </div>
