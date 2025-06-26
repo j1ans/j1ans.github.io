@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 	<meta name="description" content="">
 	<meta name="keywords" content="">
-	<title>dirsearch - My Blog</title>
+	<title>归档 - My Blog</title>
     <link rel="alternate" href="" type="application/atom+xml"/>
 	<link rel="shortcut icon" href=""/>
 	
@@ -33,7 +33,7 @@
         
             <li>
                 
-                    <a href="/archives/" class="">
+                    <a href="/archives/" class="active">
                         <i class=" fa-"></i> 
                         <span>归档</span>
                     </a>
@@ -61,21 +61,23 @@
     </div>
 </header>
 
-        <div class="column-title fadeToTop">
-    <h3><span class="title-info">标签</span> dirsearch</h3>
-</div>
-
-<div class="con-wrap fadeToTop">
+        
+<div class="con-wrap fadeToTop archive">
     
     <section class="article-area">
     
         
+        
+            
+                <div class="archive-year"><span class="year-block">2025</span></div>
+
+            
             <article class="article">
     <div class="article-wrap">
         
             <h2 class="article-title cl">
-                <a href="/2025/04/27/从0开始的web生涯-第五空间-2021-WebFTP/" title="从0开始的web生涯 - [第五空间 2021]WebFTP">
-                    从0开始的web生涯 - [第五空间 2021]WebFTP
+                <a href="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/" title="Wincor Nixdorf PORT IO Driver Stack Overflow">
+                    Wincor Nixdorf PORT IO Driver Stack Overflow
                 </a>
             </h2>
         
@@ -83,7 +85,7 @@
         <ul class="article-extra" style="margin-bottom: 20px">
             
             <li class="article-time">
-                2025-04-27
+                2025-06-26
             </li>
             
 
@@ -95,50 +97,24 @@
         </ul>
         <div class="article-description">
             
-            <p>目录扫描 信息收集 .git泄露</p>
-<p>虽然没怎么接触 盲猜是扫目录 + 扫端口 没怎么接触过kali</p>
-<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427134740449.png" alt="image-20250427134740449"></p>
-<p>扫目录好像是dirsearch 这边装的没找见 更新下源</p>
-<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427134825901.png" alt="image-20250427134825901"></p>
-<p>装上咯</p>
-<blockquote>
-<p>Dirsearch的使用非常简单，只需要在终端中输入相应的命令即可。以下是一些常用的命令选项：</p>
-<p>-u：指定目标URL。<br>-e：指定要扫描的文件扩展名（多个扩展名之间用逗号分隔）。<br>-w：指定自定义的字典文件（用于生成扫描路径）。<br>-o：指定输出格式（支持json、csv、txt等）。<br>-r 递归目录（跑出目录后，继续跑目录下面的目录<br>–random-agents 使用随机UA<br>–threads：设置扫描线程数（默认为10）。<br>例如，要扫描目标URL <a target="_blank" rel="noopener" href="http://example.com/">http://example.com</a> 并输出为JSON格式，可以使用以下命令：</p>
-</blockquote>
-<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427135004070.png" alt="image-20250427135004070"></p>
-<p>就放在相对目录下的.git 既然提示了git泄露 </p>
-<blockquote>
-<p>通过访问&#x2F;.git&#x2F;config文件可以正常的访问，config的配置信息中，我们可以看到以下的内容：</p>
+            <p>The Wincor Nixdorf PORT IO Driver ‘wnport.sys’ was found to have multiple stack overflow vulnerabilities.</p>
+<p>Driver Download Link <a target="_blank" rel="noopener" href="https://driverpack.io/en/hwids/ROOT%5CWNPORT">https://driverpack.io/en/hwids/ROOT%5CWNPORT</a></p>
+<p><img src="/./Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626232106183.png" alt="image-20250626232106183"></p>
+<p>The Driver ‘s <strong>Digital Signature</strong>. though it’s has not WHQL signature. is still permitted to be loaded by the latest version of Windows. However, for drivers with valid digital signatures issued before this policy update, Windows maintains compatibility by allowing them to bypass the WHQL requirement. </p>
+<p>Therefore, this driver may still have an impact on the new 32-bit version of Windows.</p>
+<p>The <code>IOCTL_DEVICEIO_CONTROL_FUNCTION</code> subroutine at <code>sub_11100</code> contains multiple IOCTL handlers that can trigger stack overflow conditions. Specifically, the following IOCTL codes are affected:</p>
 <ul>
-<li>版本控制系统信息: repositoryformatversion &#x3D; 0，表明这是 Git 版本 1 的配置。</li>
-<li>仓库类型: bare &#x3D; false，表明这是工作目录，并非裸仓库。</li>
-<li>分支信息: 包含 master 和 localize 两个分支的信息。</li>
-<li>远程仓库地址: url &#x3D; XXXXXXXX:XXXXXXXX&#x2F;radiodetali.git，攻击者通过这个信息可以获取到远程仓库的地址，甚至通过其他漏洞进一步入侵远程仓库。</li>
+<li><code>0x80102040</code></li>
+<li><code>0x80102044</code></li>
+<li><code>0x80102050</code></li>
+<li><code>0x80102054</code></li>
 </ul>
-</blockquote>
-<p><a target="_blank" rel="noopener" href="http://node7.anna.nssctf.cn:28653/.git/config">http://node7.anna.nssctf.cn:28653/.git/config</a></p>
-<pre><code class="hljs git">[core]
-	repositoryformatversion = 0
-	filemode = true
-	bare = false
-	logallrefupdates = true
-	ignorecase = true
-	precomposeunicode = true
-[remote &quot;origin&quot;]
-	url = https://github.com/wifeat/WebFTP.git
-	fetch = +refs/heads/*:refs/remotes/origin/*
-[branch &quot;master&quot;]
-	remote = origin
-	merge = refs/heads/master</code></pre>
-
-<p>去github找readme发现默认账号密码</p>
-<blockquote>
-<p>使用说明 1、初始账号 超级管理员 admin 密码 admin888</p>
-</blockquote>
-<p>找老半天找到flag 在phpinfo的environment里面 真傻逼</p>
-<p>还可以通过.git 找到<img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427140558753.png" alt="image-20250427140558753"></p>
-<p>打开是admin 的 密码 md5</p>
-<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427140627384.png" alt="image-20250427140627384"></p>
+<p><img src="/./Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626232659410.png" alt="image-20250626232659410"></p>
+<p>The <code>MaxCount</code> parameter actually represents the input buffer length, while <code>CommitSize</code> is constrained to a maximum of four <code>size_t</code> units. Consequently, a stack overflow will occur if the input buffer length exceeds the <code>CommitSize</code>.</p>
+<p><img src="/./Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626233012724.png" alt="image-20250626233012724"></p>
+<p>After using <code>DeviceIoControl</code> to send a large input buffer that exceeds the driver’s internal stack allocation , the system may encounter a stack overflow condition. This occurs because the driver’s IOCTL handler at sub_11100 processes the buffer without proper bounds checking, leading to memory corruption.</p>
+<p><img src="/./Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626233051235.png" alt="image-20250626233051235"></p>
+<p>This driver has triggered a <strong>PAGE_FAULT_NON_PAGE</strong> blue screen error, resulting in the system crashing., disrupting system operation by causing improper access to non-paged memory. Beyond the immediate system crash, its vulnerabilities can lead to memory corruption, enabling malicious entities to manipulate critical memory areas. In the worst - case scenario, it allows for arbitrary code execution, giving attackers the ability to run unauthorized commands with elevated privileges. What’s more concerning is that the driver’s IOCTL functions can be called by low - privileged programs, making it easier for attackers to exploit these flaws and undermine system integrity.</p>
 
         </div>
         

