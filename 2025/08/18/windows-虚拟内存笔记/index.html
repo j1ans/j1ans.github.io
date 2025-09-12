@@ -88,10 +88,10 @@
         </ul>
         <div class="article-description">
             
-            <h2 id="Windows-分页"><a href="#Windows-分页" class="headerlink" title="Windows 分页"></a>Windows 分页</h2><p><img src="/./windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818144719375.png" alt="image-20250818144719375"></p>
+            <h2 id="Windows-分页"><a href="#Windows-分页" class="headerlink" title="Windows 分页"></a>Windows 分页</h2><p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818144719375.png" alt="image-20250818144719375"></p>
 <p>线性地址通过4层页表变成物理地址，让CPU实际可以访问到物理地址。</p>
 <p>也就是说，线性地址其实是由四层页表+偏移组合而成的</p>
-<p><img src="https://mmbiz.qpic.cn/sz_mmbiz_png/1UG7KPNHN8HaHyXRfg5ia40QsKzj4Gy781DzFIx3jcd7FqjahQbOibibOcgyGxiaMN79bibJWouQERzPOKgObbic2sKw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1" alt="图片"></p>
+<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/640.webp" alt="图片"></p>
 <p>线性地址组成</p>
 <ul>
 <li>在PML4 四级页表中的表项索引 索引内内容是 PDPT 的基地址</li>
@@ -104,7 +104,7 @@
 <p>在32位系统下，windows有两种分页机制，2-9-9-12分页以及10-10-12分页，而在64位下只有一种分页机制，那就是9-9-9-9-12分页</p>
 <p>在x64体系中，只有48位是用来确定虚拟地址的，前面的16位成为符号拓展位，这16位只有为全1或者为全0两种情况。除了这两种情况之外的地址都是不合法的。</p>
 <p>这16位为全1时表示这个地址是一个内核空间的地址，而为全0时表示这个地址是一个用户空间的地址。而在windows操作系统中，由于种种原因，又只用了这48位线性地址中的 44位 。也就是说windows分配的线性地址前20位都是要么为全0，要么为全1</p>
-<h3 id="PS位"><a href="#PS位" class="headerlink" title="PS位"></a>PS位</h3><p><img src="https://mmbiz.qpic.cn/sz_mmbiz_png/1UG7KPNHN8HaHyXRfg5ia40QsKzj4Gy781DzFIx3jcd7FqjahQbOibibOcgyGxiaMN79bibJWouQERzPOKgObbic2sKw/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1" alt="图片"></p>
+<h3 id="PS位"><a href="#PS位" class="headerlink" title="PS位"></a>PS位</h3><p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/640.webp" alt="图片"></p>
 <p>除了四级页表后的PDPTE PDE 这两个页表都可能拥有PS位 </p>
 <p>PS为一般在第7位</p>
 <p>在PDPTE如果PS位为1 就认为是映射1GB 大页 </p>
@@ -127,10 +127,10 @@
 <p>000101100</p>
 <p>000010000</p>
 <p>000000000000</p>
-<p><img src="/./windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818153333044.png" alt="image-20250818153333044"></p>
+<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818153333044.png" alt="image-20250818153333044"></p>
 <p>CR3是1ad000</p>
 <p>第一层应该就是1ad000 + 255(8个1) * 8(每一个PML4E都是寄存器大小 8 字节) &#x3D; 0x1ad7f8</p>
-<p><img src="/./windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818153940511.png" alt="image-20250818153940511"></p>
+<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818153940511.png" alt="image-20250818153940511"></p>
 <p>得到PML4E8A0000000F27C867</p>
 <p>在 x64 页表中，<strong>PML4E 的高 40 位存储下一级页表（PDPT）的物理基地址</strong>，低 12 位为属性标志（如存在位、读写权限等）</p>
 <table>
@@ -151,17 +151,17 @@
 </tbody></table>
 <p>得到PDPT基地址 f27c000</p>
 <p>然后就是 f27c000+ 1e3 * 8 &#x3D; f27cf18</p>
-<p><img src="/./windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818154733555.png" alt="image-20250818154733555"></p>
+<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818154733555.png" alt="image-20250818154733555"></p>
 <pre><code class="hljs plaintext">0a000000`0f27d867</code></pre>
 
 <p>相同手法获得PDT 基地址 f27d000</p>
 <p>000101100 &#x3D; 0x2c 然后0x2c * 8 &#x3D; 0x160</p>
 <p>PT在f27d160</p>
-<p><img src="/./windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818155627813.png" alt="image-20250818155627813"></p>
+<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818155627813.png" alt="image-20250818155627813"></p>
 <p>pt基地址为f27e000 + 0x80 &#x3D; f27e080</p>
-<p><img src="/./windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818155729388.png" alt="image-20250818155729388"></p>
+<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818155729388.png" alt="image-20250818155729388"></p>
 <p>最终结果0xf185000</p>
-<p><img src="/./windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818155755759.png" alt="image-20250818155755759"></p>
+<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818155755759.png" alt="image-20250818155755759"></p>
 <pre><code class="hljs plaintext">Amd64VtoP: Virt 00007ff8c5810000, pagedir 00000000001ad000Amd64VtoP: PML4E 00000000001ad7f8Amd64VtoP: PDPE 000000000f27cf18Amd64VtoP: PDE 000000000f27d160Amd64VtoP: PTE 000000000f27e080Amd64VtoP: Mapped phys 000000000f185000Virtual address 7ff8c5810000 translates to physical address f185000.</code></pre>
 
 <p>成功手算出了物理地址</p>
