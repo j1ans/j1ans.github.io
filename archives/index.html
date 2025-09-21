@@ -76,6 +76,178 @@
     <div class="article-wrap">
         
             <h2 class="article-title cl">
+                <a href="/2025/09/21/Windows-RPC-初探/" title="Windows RPC 初探">
+                    Windows RPC 初探
+                </a>
+            </h2>
+        
+
+        <ul class="article-extra" style="margin-bottom: 20px">
+            
+            <li class="article-time">
+                2025-09-21
+            </li>
+            
+
+            
+                
+            
+
+
+        </ul>
+        <div class="article-description">
+            
+            <h2 id="开始"><a href="#开始" class="headerlink" title="开始"></a>开始</h2><p>IDL(接口定义语言)文件:</p>
+<pre><code class="hljs C">import <span class="hljs-string">&quot;oaidl.idl&quot;</span>;
+[
+    uuid(fa63b4aa-cde1<span class="hljs-number">-461b</span>-a201<span class="hljs-number">-54</span>eb3ea1808b), <span class="hljs-comment">//定义uuid</span>
+    version(<span class="hljs-number">1.0</span>) <span class="hljs-comment">//定义版本号</span>
+]
+
+interface myrpc <span class="hljs-comment">//定义rpc接口 interface</span>
+&#123;
+    <span class="hljs-type">void</span> <span class="hljs-title function_">input</span><span class="hljs-params">(<span class="hljs-type">char</span>* <span class="hljs-built_in">string</span>)</span>;
+&#125;</code></pre>
+
+<p>ACF文件:</p>
+<pre><code class="hljs C">[
+	implicit_handle(<span class="hljs-type">handle_t</span> rpcBinding)
+]
+
+interface myrpc&#123;
+
+&#125;</code></pre>
+
+<p>implicit_handle 表示是隐式句柄</p>
+<p><img src="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/image-20250921215508572.png" alt="image-20250921215508572"></p>
+<p>随后在Native Tools 内使用midl工具生成服务端和客户端所用的.c和.h文件</p>
+<p><strong>这里注意 如果要x64的RPC程序需要使用X64的Native Tools！！！</strong></p>
+<p><img src="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/image-20250921215526737.png" alt="image-20250921215526737"></p>
+<p>myrpc.h为客户端与服务端公用</p>
+<p>_c文件为Client所用</p>
+<p>_s文件为Server所用</p>
+<h2 id="服务端"><a href="#服务端" class="headerlink" title="服务端"></a>服务端</h2><blockquote>
+<p>​     服务端必须包含两个内存分配函数。这两个函数被服务端程序调用：midl_user_allocate和midl _user_free。这两个函数在服务端分配和释放内存，一般情况下midl _user_allocate和midl_user_free都会简单地封装C库函数malloc和free。</p>
+</blockquote>
+<pre><code class="hljs C"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;windows.h&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdlib.h&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;../IDL/myrpc.h&quot;</span></span>
+
+<span class="hljs-meta">#<span class="hljs-keyword">define</span> RPC_PORT <span class="hljs-string">L&quot;12345&quot;</span></span>
+
+<span class="hljs-type">void</span> <span class="hljs-title function_">input</span><span class="hljs-params">(<span class="hljs-type">char</span> * <span class="hljs-built_in">string</span>)</span> &#123;
+	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;[RPC]%s\n&quot;</span>, <span class="hljs-built_in">string</span>);
+	<span class="hljs-keyword">return</span>;
+&#125;
+
+
+<span class="hljs-type">int</span> <span class="hljs-title function_">wmain</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">wchar_t</span>* argv[])</span>
+&#123;
+	<span class="hljs-comment">// 采用tcp协议，13521端口</span>
+	RpcServerUseProtseqEp((RPC_WSTR)<span class="hljs-string">L&quot;ncacn_ip_tcp&quot;</span>, RPC_C_PROTSEQ_MAX_REQS_DEFAULT,
+		(RPC_WSTR)RPC_PORT, <span class="hljs-literal">NULL</span>);
+	<span class="hljs-comment">// 注意：从Windows XP SP2开始，增强了安全性的要求，如果用RpcServerRegisterIf()注册接口，客户端调用时会出现</span>
+	<span class="hljs-comment">// RpcExceptionCode() == 5，即Access Denied的错误，因此，必须用RpcServerRegisterIfEx带RPC_IF_ALLOW_CALLBACKS_WITH_NO_AUTH标志</span>
+	<span class="hljs-comment">// 允许客户端直接调用</span>
+	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;[RPC]Server Running in port %ls\n&quot;</span>, RPC_PORT);
+	RpcServerRegisterIfEx(myrpc_v1_0_s_ifspec, <span class="hljs-literal">NULL</span>, <span class="hljs-literal">NULL</span>, RPC_IF_ALLOW_CALLBACKS_WITH_NO_AUTH, <span class="hljs-number">0</span>, <span class="hljs-literal">NULL</span>);
+	<span class="hljs-comment">// 开始监听，本函数将一直阻塞</span>
+	RPC_STATUS result = RpcServerListen(<span class="hljs-number">1</span>, <span class="hljs-number">20</span>, FALSE);
+
+
+	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+&#125;
+
+
+<span class="hljs-type">void</span> __RPC_FAR* __RPC_USER <span class="hljs-title function_">midl_user_allocate</span><span class="hljs-params">(<span class="hljs-type">size_t</span> len)</span>
+&#123;
+	<span class="hljs-keyword">return</span>(<span class="hljs-built_in">malloc</span>(len));
+&#125;
+<span class="hljs-type">void</span> __RPC_USER <span class="hljs-title function_">midl_user_free</span><span class="hljs-params">(<span class="hljs-type">void</span> __RPC_FAR* ptr)</span>
+&#123;
+	<span class="hljs-built_in">free</span>(ptr);
+&#125;</code></pre>
+
+<p><img src="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/image-20250921222537530.png" alt="image-20250921222537530"></p>
+<h2 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h2><pre><code class="hljs C"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;../IDL/myrpc.h&quot;</span></span>
+
+<span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">()</span> &#123;
+	RPC_WSTR pszStringBinding = <span class="hljs-literal">NULL</span>;
+
+	RpcStringBindingCompose(
+		<span class="hljs-literal">NULL</span>,
+		(RPC_WSTR)<span class="hljs-string">L&quot;ncacn_ip_tcp&quot;</span>,
+		(RPC_WSTR)<span class="hljs-string">L&quot;127.0.0.1&quot;</span>,
+		(RPC_WSTR)<span class="hljs-string">L&quot;12345&quot;</span>,
+		<span class="hljs-literal">NULL</span>,
+		&amp;pszStringBinding
+	);
+
+	<span class="hljs-comment">// 绑定接口，这里要和 test.acf 的配置一致，那么就是test_Binding</span>
+	RpcBindingFromStringBinding(pszStringBinding, &amp;rpcBinding);
+
+	<span class="hljs-comment">// 下面是调用服务端的函数了</span>
+	RpcTryExcept
+	&#123;
+		<span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>)
+		&#123;
+			input(<span class="hljs-string">L&quot;Hello World!&quot;</span>);
+			Sleep(<span class="hljs-number">1000</span>);
+		&#125;
+
+	&#125;
+		RpcExcept(<span class="hljs-number">1</span>)
+	&#123;
+		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;RPC Exception %d\n&quot;</span>, RpcExceptionCode());
+		Sleep(<span class="hljs-number">2000</span>);
+	&#125;
+	RpcEndExcept
+
+
+		<span class="hljs-comment">// 释放资源</span>
+	RpcStringFree(&amp;pszStringBinding);
+	RpcBindingFree(&amp;rpcBinding);
+
+	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+&#125;
+
+
+
+
+
+<span class="hljs-comment">// 下面的函数是为了满足链接需要而写的，没有的话会出现链接错误</span>
+<span class="hljs-type">void</span> __RPC_FAR* __RPC_USER <span class="hljs-title function_">midl_user_allocate</span><span class="hljs-params">(<span class="hljs-type">size_t</span> len)</span>
+&#123;
+	<span class="hljs-keyword">return</span>(<span class="hljs-built_in">malloc</span>(len));
+&#125;
+<span class="hljs-type">void</span> __RPC_USER <span class="hljs-title function_">midl_user_free</span><span class="hljs-params">(<span class="hljs-type">void</span> __RPC_FAR* ptr)</span>
+&#123;
+	<span class="hljs-built_in">free</span>(ptr);
+&#125;</code></pre>
+
+<p><img src="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/image-20250921223201311.png" alt="image-20250921223201311"></p>
+<p>由于宽字符串的问题 所以只显示第一个字符 已经成功建立RPC远程通信</p>
+<p><img src="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/image-20250921223238178.png" alt="image-20250921223238178"></p>
+<p>客户端和服务端都需要引入rpcrt4.lib</p>
+<h2 id="Credit"><a href="#Credit" class="headerlink" title="Credit:"></a>Credit:</h2><p><a target="_blank" rel="noopener" href="https://bbs.kanxue.com/thread-262291.htm">https://bbs.kanxue.com/thread-262291.htm</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/herojuice/article/details/81015325">https://blog.csdn.net/herojuice/article/details/81015325</a></p>
+
+        </div>
+        
+            
+        
+        
+    </div>
+</article>
+
+        
+            
+            <article class="article">
+    <div class="article-wrap">
+        
+            <h2 class="article-title cl">
                 <a href="/2025/09/17/UEFI-Start-Hello-World/" title="UEFI Start - Hello World">
                     UEFI Start - Hello World
                 </a>
@@ -746,86 +918,6 @@ resp = requests.post(url=url,headers=header)
 </article>
 
         
-            
-            <article class="article">
-    <div class="article-wrap">
-        
-            <h2 class="article-title cl">
-                <a href="/2025/04/27/从0开始的web生涯-第五空间-2021-WebFTP/" title="从0开始的web生涯 - [第五空间 2021]WebFTP">
-                    从0开始的web生涯 - [第五空间 2021]WebFTP
-                </a>
-            </h2>
-        
-
-        <ul class="article-extra" style="margin-bottom: 20px">
-            
-            <li class="article-time">
-                2025-04-27
-            </li>
-            
-
-            
-                
-            
-
-
-        </ul>
-        <div class="article-description">
-            
-            <p>目录扫描 信息收集 .git泄露</p>
-<p>虽然没怎么接触 盲猜是扫目录 + 扫端口 没怎么接触过kali</p>
-<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427134740449.png" alt="image-20250427134740449"></p>
-<p>扫目录好像是dirsearch 这边装的没找见 更新下源</p>
-<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427134825901.png" alt="image-20250427134825901"></p>
-<p>装上咯</p>
-<blockquote>
-<p>Dirsearch的使用非常简单，只需要在终端中输入相应的命令即可。以下是一些常用的命令选项：</p>
-<p>-u：指定目标URL。<br>-e：指定要扫描的文件扩展名（多个扩展名之间用逗号分隔）。<br>-w：指定自定义的字典文件（用于生成扫描路径）。<br>-o：指定输出格式（支持json、csv、txt等）。<br>-r 递归目录（跑出目录后，继续跑目录下面的目录<br>–random-agents 使用随机UA<br>–threads：设置扫描线程数（默认为10）。<br>例如，要扫描目标URL <a target="_blank" rel="noopener" href="http://example.com/">http://example.com</a> 并输出为JSON格式，可以使用以下命令：</p>
-</blockquote>
-<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427135004070.png" alt="image-20250427135004070"></p>
-<p>就放在相对目录下的.git 既然提示了git泄露 </p>
-<blockquote>
-<p>通过访问&#x2F;.git&#x2F;config文件可以正常的访问，config的配置信息中，我们可以看到以下的内容：</p>
-<ul>
-<li>版本控制系统信息: repositoryformatversion &#x3D; 0，表明这是 Git 版本 1 的配置。</li>
-<li>仓库类型: bare &#x3D; false，表明这是工作目录，并非裸仓库。</li>
-<li>分支信息: 包含 master 和 localize 两个分支的信息。</li>
-<li>远程仓库地址: url &#x3D; XXXXXXXX:XXXXXXXX&#x2F;radiodetali.git，攻击者通过这个信息可以获取到远程仓库的地址，甚至通过其他漏洞进一步入侵远程仓库。</li>
-</ul>
-</blockquote>
-<p><a target="_blank" rel="noopener" href="http://node7.anna.nssctf.cn:28653/.git/config">http://node7.anna.nssctf.cn:28653/.git/config</a></p>
-<pre><code class="hljs git">[core]
-	repositoryformatversion = 0
-	filemode = true
-	bare = false
-	logallrefupdates = true
-	ignorecase = true
-	precomposeunicode = true
-[remote &quot;origin&quot;]
-	url = https://github.com/wifeat/WebFTP.git
-	fetch = +refs/heads/*:refs/remotes/origin/*
-[branch &quot;master&quot;]
-	remote = origin
-	merge = refs/heads/master</code></pre>
-
-<p>去github找readme发现默认账号密码</p>
-<blockquote>
-<p>使用说明 1、初始账号 超级管理员 admin 密码 admin888</p>
-</blockquote>
-<p>找老半天找到flag 在phpinfo的environment里面 真傻逼</p>
-<p>还可以通过.git 找到<img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427140558753.png" alt="image-20250427140558753"></p>
-<p>打开是admin 的 密码 md5</p>
-<p><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-%E7%AC%AC%E4%BA%94%E7%A9%BA%E9%97%B4-2021-WebFTP/image-20250427140627384.png" alt="image-20250427140627384"></p>
-
-        </div>
-        
-            
-        
-        
-    </div>
-</article>
-
-        
         <ul class="pagination clear">
     <span class="page-number current">1</span><a class="page-number" href="/archives/page/2/">2</a><span class="space">&hellip;</span><a class="extend next" rel="next" href="/archives/page/2/">下一页</a>
 </ul>
@@ -839,14 +931,14 @@ resp = requests.post(url=url,headers=header)
         
         <div class="widget-post widget" style="order: 1 ">
             <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
-            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/09/17/UEFI-Start-Hello-World/">UEFI Start - Hello World</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/">windows 虚拟内存笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/">Wincor Nixdorf PORT IO Driver Stack Overflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/23/windows-hook-inline-hook/">windows hook - inline hook</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-Do-you-know-http/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</a></li></ul>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/">Windows RPC 初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/09/17/UEFI-Start-Hello-World/">UEFI Start - Hello World</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/">windows 虚拟内存笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/">Wincor Nixdorf PORT IO Driver Stack Overflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/23/windows-hook-inline-hook/">windows hook - inline hook</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li></ul>
         </div>
         
 
         
         <div class="widget-tags widget" style="order: 2 ">
             <h2 class="widget-title"><i class="fa fa-tags"></i> 标签</h2>
-            <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/UEFI/" style="font-size: 10px;">UEFI</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
+            <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/RPCk/" style="font-size: 10px;">RPCk</a> <a href="/tags/UEFI/" style="font-size: 10px;">UEFI</a> <a href="/tags/Windows/" style="font-size: 10px;">Windows</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a>
         </div>
         
 
