@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 	<meta name="description" content="">
 	<meta name="keywords" content="">
-	<title>windows - My Blog</title>
+	<title>Windows - My Blog</title>
     <link rel="alternate" href="" type="application/atom+xml"/>
 	<link rel="shortcut icon" href=""/>
 	
@@ -62,7 +62,7 @@
 </header>
 
         <div class="column-title fadeToTop">
-    <h3><span class="title-info">标签</span> windows</h3>
+    <h3><span class="title-info">标签</span> Windows</h3>
 </div>
 
 <div class="con-wrap fadeToTop">
@@ -74,8 +74,8 @@
     <div class="article-wrap">
         
             <h2 class="article-title cl">
-                <a href="/2025/08/18/windows-虚拟内存笔记/" title="windows 虚拟内存笔记">
-                    windows 虚拟内存笔记
+                <a href="/2025/09/21/Windows-RPC-初探/" title="Windows RPC 初探">
+                    Windows RPC 初探
                 </a>
             </h2>
         
@@ -83,7 +83,7 @@
         <ul class="article-extra" style="margin-bottom: 20px">
             
             <li class="article-time">
-                2025-08-18
+                2025-09-21
             </li>
             
 
@@ -95,199 +95,142 @@
         </ul>
         <div class="article-description">
             
-            <h2 id="Windows-分页"><a href="#Windows-分页" class="headerlink" title="Windows 分页"></a>Windows 分页</h2><p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818144719375.png" alt="image-20250818144719375"></p>
-<p>线性地址通过4层页表变成物理地址，让CPU实际可以访问到物理地址。</p>
-<p>也就是说，线性地址其实是由四层页表+偏移组合而成的</p>
-<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/640.webp" alt="图片"></p>
-<p>线性地址组成</p>
-<ul>
-<li>在PML4 四级页表中的表项索引 索引内内容是 PDPT 的基地址</li>
-<li>拿着得到的PDPT的基地址 与在PDPT 页目录指针表的表项索引 得到PD的基地址</li>
-<li>拿着得到的PD的基地址 与在PD页目录表的表项索引 得到PT的基地址</li>
-<li>拿着得到的PT的基地址 与在PT页表的表项索引 得到Page 页的基地址</li>
-<li>然后拿着页的基地址+ Offset 得到真实物理地址 12位最大就是0xFFF 所以一个页通常是0x1000</li>
-<li>也就是0x0-0xFFF 4KB页大小</li>
-</ul>
-<p>在32位系统下，windows有两种分页机制，2-9-9-12分页以及10-10-12分页，而在64位下只有一种分页机制，那就是9-9-9-9-12分页</p>
-<p>在x64体系中，只有48位是用来确定虚拟地址的，前面的16位成为符号拓展位，这16位只有为全1或者为全0两种情况。除了这两种情况之外的地址都是不合法的。</p>
-<p>这16位为全1时表示这个地址是一个内核空间的地址，而为全0时表示这个地址是一个用户空间的地址。而在windows操作系统中，由于种种原因，又只用了这48位线性地址中的 44位 。也就是说windows分配的线性地址前20位都是要么为全0，要么为全1</p>
-<h3 id="PS位"><a href="#PS位" class="headerlink" title="PS位"></a>PS位</h3><p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/640.webp" alt="图片"></p>
-<p>除了四级页表后的PDPTE PDE 这两个页表都可能拥有PS位 </p>
-<p>PS为一般在第7位</p>
-<p>在PDPTE如果PS位为1 就认为是映射1GB 大页 </p>
-<ul>
-<li>PD PT Offset就变成一个大的Offset 然后PDPTE是这个1GB物理大页的基地址 </li>
-<li>Offset大小就是 9+9+12 &#x3D; 30位大小(PD的页表的表项索引 + PT页表的表项索引 + Offset)</li>
-</ul>
-<p>如果在PDE PS位为1 那么就认为是映射2MB 大页</p>
-<ul>
-<li>PT Offset 就变成一个大的Offset 然后PDE是这个2MB大页的基地址</li>
-<li>Offset 大小就是9 +12 &#x3D; 21 位 (PT页表的表项索引 + Offset) 0x1FFFFF字节</li>
-</ul>
-<h3 id="CR3寄存器"><a href="#CR3寄存器" class="headerlink" title="CR3寄存器"></a>CR3寄存器</h3><ul>
-<li>x64 PML4基地址存储在CR3寄存器内。</li>
-</ul>
-<h3 id="例子"><a href="#例子" class="headerlink" title="例子"></a>例子</h3><pre><code class="hljs plaintext">00007ff8`c5810000</code></pre>
+            <h2 id="开始"><a href="#开始" class="headerlink" title="开始"></a>开始</h2><p>IDL(接口定义语言)文件:</p>
+<pre><code class="hljs C">import <span class="hljs-string">&quot;oaidl.idl&quot;</span>;
+[
+    uuid(fa63b4aa-cde1<span class="hljs-number">-461b</span>-a201<span class="hljs-number">-54</span>eb3ea1808b), <span class="hljs-comment">//定义uuid</span>
+    version(<span class="hljs-number">1.0</span>) <span class="hljs-comment">//定义版本号</span>
+]
 
-<p>011111111</p>
-<p>111100011</p>
-<p>000101100</p>
-<p>000010000</p>
-<p>000000000000</p>
-<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818153333044.png" alt="image-20250818153333044"></p>
-<p>CR3是1ad000</p>
-<p>第一层应该就是1ad000 + 255(8个1) * 8(每一个PML4E都是寄存器大小 8 字节) &#x3D; 0x1ad7f8</p>
-<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818153940511.png" alt="image-20250818153940511"></p>
-<p>得到PML4E8A0000000F27C867</p>
-<p>在 x64 页表中，<strong>PML4E 的高 40 位存储下一级页表（PDPT）的物理基地址</strong>，低 12 位为属性标志（如存在位、读写权限等）</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>名称</th>
-<th>值</th>
-<th>类型</th>
-</tr>
-</thead>
-<tbody><tr>
-<td></td>
-<td>pdpt</td>
-<td>0x8a0000000f27c000</td>
-<td>unsigned __int64</td>
-</tr>
-</tbody></table>
-<p>得到PDPT基地址 f27c000</p>
-<p>然后就是 f27c000+ 1e3 * 8 &#x3D; f27cf18</p>
-<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818154733555.png" alt="image-20250818154733555"></p>
-<pre><code class="hljs plaintext">0a000000`0f27d867</code></pre>
-
-<p>相同手法获得PDT 基地址 f27d000</p>
-<p>000101100 &#x3D; 0x2c 然后0x2c * 8 &#x3D; 0x160</p>
-<p>PT在f27d160</p>
-<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818155627813.png" alt="image-20250818155627813"></p>
-<p>pt基地址为f27e000 + 0x80 &#x3D; f27e080</p>
-<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818155729388.png" alt="image-20250818155729388"></p>
-<p>最终结果0xf185000</p>
-<p><img src="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/image-20250818155755759.png" alt="image-20250818155755759"></p>
-<pre><code class="hljs plaintext">Amd64VtoP: Virt 00007ff8c5810000, pagedir 00000000001ad000Amd64VtoP: PML4E 00000000001ad7f8Amd64VtoP: PDPE 000000000f27cf18Amd64VtoP: PDE 000000000f27d160Amd64VtoP: PTE 000000000f27e080Amd64VtoP: Mapped phys 000000000f185000Virtual address 7ff8c5810000 translates to physical address f185000.</code></pre>
-
-<p>成功手算出了物理地址</p>
-<h3 id="PTE-PDE"><a href="#PTE-PDE" class="headerlink" title="PTE -&gt; PDE"></a>PTE -&gt; PDE</h3><p>那么我们其实也可以反推</p>
-<p>因为PTE &#x3D; </p>
-<h2 id="Windows-内存管理"><a href="#Windows-内存管理" class="headerlink" title="Windows 内存管理"></a>Windows 内存管理</h2><h3 id="VAD"><a href="#VAD" class="headerlink" title="VAD"></a>VAD</h3><p>微软和Intel手册叫的不同</p>
-<ul>
-<li>PXE - PM4LE</li>
-<li>PPE - PDPTE</li>
-<li>PDE - PDE</li>
-<li>PTE - PTE</li>
-</ul>
-
-        </div>
-        
-            
-        
-        
-    </div>
-</article>
-
-        
-            <article class="article">
-    <div class="article-wrap">
-        
-            <h2 class="article-title cl">
-                <a href="/2025/05/23/windows-hook-inline-hook/" title="windows hook - inline hook">
-                    windows hook - inline hook
-                </a>
-            </h2>
-        
-
-        <ul class="article-extra" style="margin-bottom: 20px">
-            
-            <li class="article-time">
-                2025-05-23
-            </li>
-            
-
-            
-                
-            
-
-
-        </ul>
-        <div class="article-description">
-            
-            <p>inline hook 内联钩子是一种常用的钩子</p>
-<p>其原理是直接把函数开头改成一个JMP ，后跟我们的hook函数地址</p>
-<p>在hook函数里就随后恢复我们的原始字节 并跳到原函数执行 随后直接再次改成JMP挂钩</p>
-<p>一般来说在windows内程序代码应该都是不可写的 需要使用VirtualProtect函数来改权限</p>
-<pre><code class="hljs c">BOOL
-WINAPI
-<span class="hljs-title function_">VirtualProtect</span><span class="hljs-params">(</span>
-<span class="hljs-params">    _In_  LPVOID lpAddress,</span>
-<span class="hljs-params">    _In_  SIZE_T dwSize,</span>
-<span class="hljs-params">    _In_  DWORD flNewProtect,</span>
-<span class="hljs-params">    _Out_ PDWORD lpflOldProtect</span>
-<span class="hljs-params">    )</span>
+interface myrpc <span class="hljs-comment">//定义rpc接口 interface</span>
 &#123;
-    <span class="hljs-keyword">return</span> VirtualProtectFromApp (lpAddress, dwSize, flNewProtect, lpflOldProtect);
+    <span class="hljs-type">void</span> <span class="hljs-title function_">input</span><span class="hljs-params">(<span class="hljs-type">char</span>* <span class="hljs-built_in">string</span>)</span>;
 &#125;</code></pre>
 
-<p>简单的poc</p>
-<pre><code class="hljs c++"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span>
-<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;windows.h&gt;</span></span>
+<p>ACF文件:</p>
+<pre><code class="hljs C">[
+	implicit_handle(<span class="hljs-type">handle_t</span> rpcBinding)
+]
 
-BYTE original_code[<span class="hljs-number">14</span>];
-<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">hook</span><span class="hljs-params">(ULONG_PTR addr, ULONG_PTR target)</span></span>;
-<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">unhook</span><span class="hljs-params">(ULONG_PTR addr, BYTE* original)</span></span>;
+interface myrpc&#123;
 
-<span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">print_custom</span><span class="hljs-params">()</span> </span>&#123;
-    std::cout &lt;&lt; <span class="hljs-string">&quot;Hello World!\n&quot;</span>;
-    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
-&#125;
-
-<span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">print_hook</span><span class="hljs-params">()</span> </span>&#123;
-    std::cout &lt;&lt; <span class="hljs-string">&quot;you are hooked!&quot;</span> &lt;&lt; std::endl;
-    <span class="hljs-built_in">unhook</span>((ULONG_PTR)&amp;print_custom, original_code);
-    <span class="hljs-built_in">print_custom</span>();
-    <span class="hljs-built_in">hook</span>((ULONG_PTR)&amp;print_custom, (ULONG_PTR)&amp;print_hook);
-    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
-&#125;
-
-
-
-<span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span>
-<span class="hljs-function"></span>&#123;
-    ULONG_PTR print_addr = (ULONG_PTR)&amp;print_custom;
-    std::cout &lt;&lt;<span class="hljs-string">&quot;[+]print_addr=&gt;&quot;</span> &lt;&lt; std::hex &lt;&lt; print_addr &lt;&lt; std::endl;
-    ULONG_PTR print_hook_addr = (ULONG_PTR)&amp;print_hook;
-    std::cout &lt;&lt; <span class="hljs-string">&quot;[+]print_hook=&gt;&quot;</span> &lt;&lt; std::hex &lt;&lt; print_hook_addr &lt;&lt; std::endl;
-
-    DWORD dwOldProtect;
-
-
-    <span class="hljs-built_in">VirtualProtect</span>((LPVOID)print_addr, <span class="hljs-number">0x233</span>, <span class="hljs-number">64</span>, &amp;dwOldProtect);
-    <span class="hljs-built_in">memcpy</span>((<span class="hljs-type">void</span>*)(&amp;original_code), (<span class="hljs-type">void</span>*)(print_addr), <span class="hljs-number">14</span>);
-    <span class="hljs-built_in">hook</span>(print_addr, print_hook_addr);
-    
-    <span class="hljs-type">int</span> qwq = <span class="hljs-built_in">print_custom</span>();
-    <span class="hljs-type">int</span> qwq1 = <span class="hljs-built_in">print_custom</span>();
-    <span class="hljs-built_in">system</span>(<span class="hljs-string">&quot;pause&quot;</span>);
-
-&#125;
-
-<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">hook</span><span class="hljs-params">(ULONG_PTR addr,ULONG_PTR target)</span></span>&#123;
-    BYTE jmp_code[<span class="hljs-number">14</span>] = &#123;
-   <span class="hljs-number">0xFF</span>, <span class="hljs-number">0x25</span>, <span class="hljs-number">0x00</span>, <span class="hljs-number">0x00</span>, <span class="hljs-number">0x00</span>, <span class="hljs-number">0x00</span>,  <span class="hljs-comment">// ; jmp qword ptr [rip + 0x0]</span>
-   <span class="hljs-number">0x00</span>, <span class="hljs-number">0x00</span>, <span class="hljs-number">0x00</span>, <span class="hljs-number">0x00</span>, <span class="hljs-number">0x00</span>, <span class="hljs-number">0x00</span>, <span class="hljs-number">0x00</span>, <span class="hljs-number">0x00</span>  <span class="hljs-comment">// 后跟绝对地址</span>
-    &#125;;
-    <span class="hljs-built_in">memcpy</span>((<span class="hljs-type">void</span>*)&amp;jmp_code[<span class="hljs-number">6</span>], (<span class="hljs-type">void</span>*)&amp;target, <span class="hljs-number">8</span>);
-    <span class="hljs-built_in">memcpy</span>((<span class="hljs-type">void</span>*)(addr), &amp;jmp_code, <span class="hljs-number">14</span>);
-&#125;
-
-<span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">unhook</span><span class="hljs-params">(ULONG_PTR addr, BYTE* original)</span> </span>&#123;
-    <span class="hljs-built_in">memcpy</span>((<span class="hljs-type">void</span>*)addr, original, <span class="hljs-number">14</span>);
 &#125;</code></pre>
 
+<p>implicit_handle 表示是隐式句柄</p>
+<p><img src="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/image-20250921215508572.png" alt="image-20250921215508572"></p>
+<p>随后在Native Tools 内使用midl工具生成服务端和客户端所用的.c和.h文件</p>
+<p><strong>这里注意 如果要x64的RPC程序需要使用X64的Native Tools！！！</strong></p>
+<p><img src="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/image-20250921215526737.png" alt="image-20250921215526737"></p>
+<p>myrpc.h为客户端与服务端公用</p>
+<p>_c文件为Client所用</p>
+<p>_s文件为Server所用</p>
+<h2 id="服务端"><a href="#服务端" class="headerlink" title="服务端"></a>服务端</h2><blockquote>
+<p>​     服务端必须包含两个内存分配函数。这两个函数被服务端程序调用：midl_user_allocate和midl _user_free。这两个函数在服务端分配和释放内存，一般情况下midl _user_allocate和midl_user_free都会简单地封装C库函数malloc和free。</p>
+</blockquote>
+<pre><code class="hljs C"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;windows.h&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdlib.h&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;../IDL/myrpc.h&quot;</span></span>
+
+<span class="hljs-meta">#<span class="hljs-keyword">define</span> RPC_PORT <span class="hljs-string">L&quot;12345&quot;</span></span>
+
+<span class="hljs-type">void</span> <span class="hljs-title function_">input</span><span class="hljs-params">(<span class="hljs-type">char</span> * <span class="hljs-built_in">string</span>)</span> &#123;
+	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;[RPC]%s\n&quot;</span>, <span class="hljs-built_in">string</span>);
+	<span class="hljs-keyword">return</span>;
+&#125;
+
+
+<span class="hljs-type">int</span> <span class="hljs-title function_">wmain</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">wchar_t</span>* argv[])</span>
+&#123;
+	<span class="hljs-comment">// 采用tcp协议，13521端口</span>
+	RpcServerUseProtseqEp((RPC_WSTR)<span class="hljs-string">L&quot;ncacn_ip_tcp&quot;</span>, RPC_C_PROTSEQ_MAX_REQS_DEFAULT,
+		(RPC_WSTR)RPC_PORT, <span class="hljs-literal">NULL</span>);
+	<span class="hljs-comment">// 注意：从Windows XP SP2开始，增强了安全性的要求，如果用RpcServerRegisterIf()注册接口，客户端调用时会出现</span>
+	<span class="hljs-comment">// RpcExceptionCode() == 5，即Access Denied的错误，因此，必须用RpcServerRegisterIfEx带RPC_IF_ALLOW_CALLBACKS_WITH_NO_AUTH标志</span>
+	<span class="hljs-comment">// 允许客户端直接调用</span>
+	<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;[RPC]Server Running in port %ls\n&quot;</span>, RPC_PORT);
+	RpcServerRegisterIfEx(myrpc_v1_0_s_ifspec, <span class="hljs-literal">NULL</span>, <span class="hljs-literal">NULL</span>, RPC_IF_ALLOW_CALLBACKS_WITH_NO_AUTH, <span class="hljs-number">0</span>, <span class="hljs-literal">NULL</span>);
+	<span class="hljs-comment">// 开始监听，本函数将一直阻塞</span>
+	RPC_STATUS result = RpcServerListen(<span class="hljs-number">1</span>, <span class="hljs-number">20</span>, FALSE);
+
+
+	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+&#125;
+
+
+<span class="hljs-type">void</span> __RPC_FAR* __RPC_USER <span class="hljs-title function_">midl_user_allocate</span><span class="hljs-params">(<span class="hljs-type">size_t</span> len)</span>
+&#123;
+	<span class="hljs-keyword">return</span>(<span class="hljs-built_in">malloc</span>(len));
+&#125;
+<span class="hljs-type">void</span> __RPC_USER <span class="hljs-title function_">midl_user_free</span><span class="hljs-params">(<span class="hljs-type">void</span> __RPC_FAR* ptr)</span>
+&#123;
+	<span class="hljs-built_in">free</span>(ptr);
+&#125;</code></pre>
+
+<p><img src="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/image-20250921222537530.png" alt="image-20250921222537530"></p>
+<h2 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h2><pre><code class="hljs C"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;../IDL/myrpc.h&quot;</span></span>
+
+<span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">()</span> &#123;
+	RPC_WSTR pszStringBinding = <span class="hljs-literal">NULL</span>;
+
+	RpcStringBindingCompose(
+		<span class="hljs-literal">NULL</span>,
+		(RPC_WSTR)<span class="hljs-string">L&quot;ncacn_ip_tcp&quot;</span>,
+		(RPC_WSTR)<span class="hljs-string">L&quot;127.0.0.1&quot;</span>,
+		(RPC_WSTR)<span class="hljs-string">L&quot;12345&quot;</span>,
+		<span class="hljs-literal">NULL</span>,
+		&amp;pszStringBinding
+	);
+
+	<span class="hljs-comment">// 绑定接口，这里要和 test.acf 的配置一致，那么就是test_Binding</span>
+	RpcBindingFromStringBinding(pszStringBinding, &amp;rpcBinding);
+
+	<span class="hljs-comment">// 下面是调用服务端的函数了</span>
+	RpcTryExcept
+	&#123;
+		<span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>)
+		&#123;
+			input(<span class="hljs-string">L&quot;Hello World!&quot;</span>);
+			Sleep(<span class="hljs-number">1000</span>);
+		&#125;
+
+	&#125;
+		RpcExcept(<span class="hljs-number">1</span>)
+	&#123;
+		<span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;RPC Exception %d\n&quot;</span>, RpcExceptionCode());
+		Sleep(<span class="hljs-number">2000</span>);
+	&#125;
+	RpcEndExcept
+
+
+		<span class="hljs-comment">// 释放资源</span>
+	RpcStringFree(&amp;pszStringBinding);
+	RpcBindingFree(&amp;rpcBinding);
+
+	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+&#125;
+
+
+
+
+
+<span class="hljs-comment">// 下面的函数是为了满足链接需要而写的，没有的话会出现链接错误</span>
+<span class="hljs-type">void</span> __RPC_FAR* __RPC_USER <span class="hljs-title function_">midl_user_allocate</span><span class="hljs-params">(<span class="hljs-type">size_t</span> len)</span>
+&#123;
+	<span class="hljs-keyword">return</span>(<span class="hljs-built_in">malloc</span>(len));
+&#125;
+<span class="hljs-type">void</span> __RPC_USER <span class="hljs-title function_">midl_user_free</span><span class="hljs-params">(<span class="hljs-type">void</span> __RPC_FAR* ptr)</span>
+&#123;
+	<span class="hljs-built_in">free</span>(ptr);
+&#125;</code></pre>
+
+<p><img src="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/image-20250921223201311.png" alt="image-20250921223201311"></p>
+<p>由于宽字符串的问题 所以只显示第一个字符 已经成功建立RPC远程通信</p>
+<p><img src="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/image-20250921223238178.png" alt="image-20250921223238178"></p>
+<p>客户端和服务端都需要引入rpcrt4.lib</p>
+<h2 id="Credit"><a href="#Credit" class="headerlink" title="Credit:"></a>Credit:</h2><p><a target="_blank" rel="noopener" href="https://bbs.kanxue.com/thread-262291.htm">https://bbs.kanxue.com/thread-262291.htm</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/herojuice/article/details/81015325">https://blog.csdn.net/herojuice/article/details/81015325</a></p>
 
         </div>
         
@@ -311,14 +254,14 @@ BYTE original_code[<span class="hljs-number">14</span>];
         
         <div class="widget-post widget" style="order: 1 ">
             <h2 class="widget-title"><i class="fa fa-file-text"></i> 近期文章</h2>
-            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/">Windows RPC 初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/09/17/UEFI-Start-Hello-World/">UEFI Start - Hello World</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/">windows 虚拟内存笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/">Wincor Nixdorf PORT IO Driver Stack Overflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/23/windows-hook-inline-hook/">windows hook - inline hook</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-no-wakeup/">从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</a></li></ul>
+            <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/11/21/2025%E5%B9%B4%E5%B9%BF%E8%A5%BF%E7%BD%91%E7%BB%9C%E4%B8%8E%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8%E8%81%8C%E4%B8%9A%E6%8A%80%E8%83%BD%E7%AB%9E%E8%B5%9B%E5%86%B3%E8%B5%9B-pwn-writeup/">2025年广西网络与信息安全职业技能竞赛决赛 pwn writeup</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/">Windows RPC 初探</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/09/17/UEFI-Start-Hello-World/">UEFI Start - Hello World</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/">windows 虚拟内存笔记</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/">Wincor Nixdorf PORT IO Driver Stack Overflow</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/23/windows-hook-inline-hook/">windows hook - inline hook</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/27/2025-4-26-BOCCHI-THE-ROCK-%E4%B8%8A/">2025/4/26 BOCCHI THE ROCK(上)</a></li></ul>
         </div>
         
 
         
         <div class="widget-tags widget" style="order: 2 ">
             <h2 class="widget-title"><i class="fa fa-tags"></i> 标签</h2>
-            <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/UEFI/" style="font-size: 10px;">UEFI</a> <a href="/tags/Windows/" style="font-size: 10px;">Windows</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 10px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a>
+            <a href="/tags/2025/" style="font-size: 10px;">2025</a> <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/UEFI/" style="font-size: 10px;">UEFI</a> <a href="/tags/Windows/" style="font-size: 10px;">Windows</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 11.67px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/match/" style="font-size: 10px;">match</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a>
         </div>
         
 
