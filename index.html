@@ -63,10 +63,10 @@
         
           <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
         
-        <a class="nav-icon nav-search-btn" title="Suche"><span class="fa fa-search"></span></a>
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Suche"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://b.iakb.org"></form>
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://b.iakb.org"></form>
       </div>
     </div>
   </div>
@@ -102,28 +102,28 @@
 <blockquote>
 <p>From <a target="_blank" rel="noopener" href="https://www.reddit.com/r/setupapp/comments/t615ii/xpod_tool_working_fine_on_ipod_5th_gen/">https://www.reddit.com/r/setupapp/comments/t615ii/xpod_tool_working_fine_on_ipod_5th_gen/</a></p>
 </blockquote>
-<p><img src="/./%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094648007.png" alt="image-20260218094648007"></p>
+<p><img src="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094648007.png" alt="image-20260218094648007"></p>
 <p>一番查找，我找到了它的安装包并对其进行逆向工程。发现了很有意思的两条命令</p>
-<p><img src="/./%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094831609.png" alt="image-20260218094831609"></p>
+<p><img src="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094831609.png" alt="image-20260218094831609"></p>
 <p>bdev命令 这到底是什么命令呢？</p>
 <blockquote>
 <p>From <a target="_blank" rel="noopener" href="https://theapplewiki.com/wiki/IBSS_commands">https://theapplewiki.com/wiki/IBSS_commands</a></p>
 </blockquote>
-<p><img src="/./%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094928139.png" alt="image-20260218094928139"></p>
+<p><img src="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094928139.png" alt="image-20260218094928139"></p>
 <p>我们可以看到他是用与块设备的，那么肯定就是在iBSS里面了，大概率我们可以推测出是使用的iBEC的命令(Pwned iDevice需要发送pwnedibss)。那么就肯定和苹果泄露iBoot源码有关系了。</p>
 <p>我找到了一份iBoot源码开始研究。</p>
 <blockquote>
 <p>待施工</p>
 </blockquote>
 <p>在修改完众多文件与接管panic之后，我们已经可以写入syscfg分区了。</p>
-<p><img src="/./%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218095433425.png" alt="image-20260218095433425"></p>
+<p><img src="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218095433425.png" alt="image-20260218095433425"></p>
 <p>驱动显示是读写状态。</p>
-<p><img src="/./%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218095505719.png" alt="image-20260218095505719"></p>
+<p><img src="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218095505719.png" alt="image-20260218095505719"></p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/" data-id="cmlrdrtka001ickuafz08547d" data-title="关于Apple产品的无diags修改Syscfg分区" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/" data-id="cmlrdtstu001l2wua3x6g9ejo" data-title="关于Apple产品的无diags修改Syscfg分区" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -182,7 +182,7 @@ s.send(<span class="hljs-string">b&#x27;\xE9\x03\x00\x00&#x27;</span> + <span cl
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2026/01/28/i4tools-unauthorized-RCE/" data-id="cmlrdrtk5000uckuabfuwhdyv" data-title="i4tools unauthorized RCE" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2026/01/28/i4tools-unauthorized-RCE/" data-id="cmlrdtstm000n2wuadxjhergl" data-title="i4tools unauthorized RCE" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -372,7 +372,7 @@ s.send(<span class="hljs-string">b&#x27;\xE9\x03\x00\x00&#x27;</span> + <span cl
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2026/01/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%85%A5%E9%97%A8-NISACTF-2022-babyserialize/" data-id="cmlrdrtk3000ickua6l4w6fbz" data-title="PHP反序列化入门 - [NISACTF 2022]babyserialize" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2026/01/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%85%A5%E9%97%A8-NISACTF-2022-babyserialize/" data-id="cmlrdtstk000c2wuaf7rd8auk" data-title="PHP反序列化入门 - [NISACTF 2022]babyserialize" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -461,7 +461,7 @@ s.send(<span class="hljs-string">b&#x27;\xE9\x03\x00\x00&#x27;</span> + <span cl
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2026/01/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%85%A5%E9%97%A8-no-wakeup/" data-id="cmlrdrtk10008ckua0cdp8klb" data-title="PHP反序列化入门 - no_wakeup" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2026/01/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%85%A5%E9%97%A8-no-wakeup/" data-id="cmlrdtstk000d2wuaajki9azi" data-title="PHP反序列化入门 - no_wakeup" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -694,7 +694,7 @@ itr()
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/11/21/2025%E5%B9%B4%E5%B9%BF%E8%A5%BF%E7%BD%91%E7%BB%9C%E4%B8%8E%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8%E8%81%8C%E4%B8%9A%E6%8A%80%E8%83%BD%E7%AB%9E%E8%B5%9B%E5%86%B3%E8%B5%9B-pwn-writeup/" data-id="cmlrdrtk1000ackua0fhm4mt4" data-title="2025年广西网络与信息安全职业技能竞赛决赛 pwn writeup" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/11/21/2025%E5%B9%B4%E5%B9%BF%E8%A5%BF%E7%BD%91%E7%BB%9C%E4%B8%8E%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8%E8%81%8C%E4%B8%9A%E6%8A%80%E8%83%BD%E7%AB%9E%E8%B5%9B%E5%86%B3%E8%B5%9B-pwn-writeup/" data-id="cmlrdtsti00052wuacyxxbty2" data-title="2025年广西网络与信息安全职业技能竞赛决赛 pwn writeup" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -870,7 +870,7 @@ interface myrpc&#123;
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/" data-id="cmlrdrtk3000gckuabw5906k6" data-title="Windows RPC 初探" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/" data-id="cmlrdtstl000j2wua1qcwembn" data-title="Windows RPC 初探" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -924,7 +924,7 @@ interface myrpc&#123;
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/09/17/UEFI-Start-Hello-World/" data-id="cmlrdrtk2000eckuaaypocy2l" data-title="UEFI Start - Hello World" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/09/17/UEFI-Start-Hello-World/" data-id="cmlrdtstl000i2wua2f8ih03y" data-title="UEFI Start - Hello World" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1050,7 +1050,7 @@ interface myrpc&#123;
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/" data-id="cmlrdrtk80017ckuafpys5352" data-title="windows 虚拟内存笔记" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/" data-id="cmlrdtstp00112wuafo7y0cbs" data-title="windows 虚拟内存笔记" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1108,7 +1108,7 @@ interface myrpc&#123;
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/" data-id="cmlrdrtk2000dckua0by34l27" data-title="Wincor Nixdorf PORT IO Driver Stack Overflow" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/" data-id="cmlrdtstl000g2wuaelleczrx" data-title="Wincor Nixdorf PORT IO Driver Stack Overflow" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1218,7 +1218,7 @@ BYTE original_code[<span class="hljs-number">14</span>];
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/05/23/windows-hook-inline-hook/" data-id="cmlrdrtk70014ckua967ga3mh" data-title="windows hook - inline hook" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/05/23/windows-hook-inline-hook/" data-id="cmlrdtstp00132wuaffryh1z9" data-title="windows hook - inline hook" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -1236,7 +1236,7 @@ BYTE original_code[<span class="hljs-number">14</span>];
 
   <nav id="page-nav">
     
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/">weiter &raquo;</a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
   </nav>
 
 </section>
@@ -1267,7 +1267,7 @@ BYTE original_code[<span class="hljs-number">14</span>];
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Archiv</h3>
+    <h3 class="widget-title">Archives</h3>
     <div class="widget">
       <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">二月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">一月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">十一月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">九月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">八月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">六月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">四月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a></li></ul>
     </div>
@@ -1277,7 +1277,7 @@ BYTE original_code[<span class="hljs-number">14</span>];
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">letzter Beitrag</h3>
+    <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
         
