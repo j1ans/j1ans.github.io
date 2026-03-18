@@ -1,0 +1,46 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>关于Apple产品的无diags修改Syscfg分区</title>
+</head>
+<body>
+<b>关于Apple产品的无diags修改Syscfg分区</b><br>
+<small>2026-02-18</small>
+<hr>
+<p><strong>请注意:讨论任何有关AppleInternal(苹果内部软件)的文章都是不合法的,在此讨论仅为学术研究</strong></p>
+<p>最近闲下来的时候发现了一个很有意思的软件(XPod),据说它可以不使用diags(苹果内部使用的镜像，通常出现在DVT&#x2F;EVT等工程设备中)，来修改syscfg分区。</p>
+<blockquote>
+<p>From <a href="https://www.reddit.com/r/setupapp/comments/t615ii/xpod_tool_working_fine_on_ipod_5th_gen/">https://www.reddit.com/r/setupapp/comments/t615ii/xpod_tool_working_fine_on_ipod_5th_gen/</a></p>
+</blockquote>
+<p><br><br><img src="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094648007.png" width="200"><br>
+<br>
+</p>
+<p>一番查找，我找到了它的安装包并对其进行逆向工程。发现了很有意思的两条命令</p>
+<p><br><br><img src="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094831609.png" width="200"><br>
+<br>
+</p>
+<p>bdev命令 这到底是什么命令呢？</p>
+<blockquote>
+<p>From <a href="https://theapplewiki.com/wiki/IBSS_commands">https://theapplewiki.com/wiki/IBSS_commands</a></p>
+</blockquote>
+<p><br><br><img src="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218094928139.png" width="200"><br>
+<br>
+</p>
+<p>我们可以看到他是用与块设备的，那么肯定就是在iBSS里面了，大概率我们可以推测出是使用的iBEC的命令(Pwned iDevice需要发送pwnedibss)。那么就肯定和苹果泄露iBoot源码有关系了。</p>
+<p>我找到了一份iBoot源码开始研究。</p>
+<blockquote>
+<p>待施工</p>
+</blockquote>
+<p>在修改完众多文件与接管panic之后，我们已经可以写入syscfg分区了。</p>
+<p><br><br><img src="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218095433425.png" width="200"><br>
+<br>
+</p>
+<p>驱动显示是读写状态。</p>
+<p><br><br><img src="/2026/02/18/%E5%85%B3%E4%BA%8EApple%E4%BA%A7%E5%93%81%E7%9A%84%E6%97%A0diags%E4%BF%AE%E6%94%B9Syscfg%E5%88%86%E5%8C%BA/image-20260218095505719.png" width="200"><br>
+<br>
+</p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

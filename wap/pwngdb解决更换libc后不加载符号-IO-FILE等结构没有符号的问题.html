@@ -1,0 +1,92 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题</title>
+</head>
+<body>
+<b>pwngdb解决更换libc后不加载符号/_IO_FILE等结构没有符号的问题</b><br>
+<small>2025-04-23</small>
+<hr>
+<p>之前符号都很正常 知道开始做IO_FILE题目，更换glibc版本后一直找不到_IO_FILE的符号</p>
+<p>一开始以为是glibc_all_in_one没有下载debug的glibc 然后看了一下download的输出是有的</p>
+<p>放在了.debug目录 查了好久都说pwndbg会自己加载 然后看了pwndbg说glibc没有符号</p>
+<p>终于找到了解决方案 看到了这位师傅的文章<a href="https://www.cnblogs.com/9man/p/17741818.html">https://www.cnblogs.com/9man/p/17741818.html</a></p>
+<br><b><a href="#脚本获取，配置"></a>脚本获取，配置</b><br>
+<p>执行<code>vim ~/.pwndbg/gdbinit.py</code><br>然后复制下方代码到最底下，然后输入<code>:wq</code>回车，保存退出。</p>
+<p>我改了一下添加的脚本</p>
+<pre><code>import gdb
+import os
+from pathlib import Path
+
+# ANSI颜色转义码
+COLOR_GREEN = &quot;\033[32m&quot;  # 绿色
+COLOR_RED = &quot;\033[31m&quot;    # 红色
+COLOR_RESET = &quot;\033[0m&quot;   # 重置颜色
+
+# 递归加载符号文件的函数
+def load_symbols_recursive(folder_path):
+    # 获取文件夹下的所有内容，包括子文件夹
+    items = os.listdir(folder_path)
+
+    for item in items:
+        item_path = os.path.join(folder_path, item)
+
+        if os.path.isfile(item_path):
+            try:
+                gdb.execute(&quot;add-symbol-file &#123;&#125;&quot;.format(item_path))
+                print(COLOR_GREEN + &quot;[+] Loaded symbols &quot; + COLOR_RESET + &quot;from &#123;&#125;&quot;.format(item_path))
+            except gdb.error as e:
+                print(COLOR_RED + &quot;[-] Failed to load&quot; + COLOR_RESET + &quot; symbols from &#123;&#125;: &#123;&#125;&quot;.format(item_path, e))
+        elif os.path.isdir(item_path):
+            load_symbols_recursive(item_path)  # 递归处理子文件夹
+
+# 创建一个自定义的GDB命令，用于加载libc路径对应的.debug符号
+class LoadLibcDebugSymbols(gdb.Command):
+    def __init__(self):
+        super(LoadLibcDebugSymbols, self).__init__(&quot;loadlibc&quot;, gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        # 解析参数为libc路径
+        libc_path = arg.strip()
+
+        if not libc_path:
+            print(&quot;Usage: loadlibc &lt;libc_path&gt;&quot;)
+            print(&quot;Example: loadlibc /home/rick/glibc-all-in-one/libs/2.35-0ubuntu3_amd64/libc.so.6&quot;)
+            return
+
+        # 检查文件是否存在
+        if not os.path.exists(libc_path) or not os.path.isfile(libc_path):
+            print(COLOR_RED + &quot;[-] Libc file does not exist: &#123;&#125;&quot;.format(libc_path) + COLOR_RESET)
+            return
+
+        # 获取.debug文件夹路径
+        libc_dir = os.path.dirname(libc_path)
+        debug_dir = os.path.join(libc_dir, &quot;.debug&quot;)
+
+        # 检查.debug文件夹是否存在
+        if not os.path.exists(debug_dir) or not os.path.isdir(debug_dir):
+            print(COLOR_RED + &quot;[-] .debug folder does not exist in: &#123;&#125;&quot;.format(libc_dir) + COLOR_RESET)
+            return
+
+        # 先加载libc本身的符号
+        try:
+            gdb.execute(&quot;sharedlibrary libc.so.6&quot;)
+            print(COLOR_GREEN + &quot;[+] Loaded libc.so.6 symbols&quot; + COLOR_RESET)
+        except gdb.error as e:
+            print(COLOR_RED + &quot;[-] Failed to load libc.so.6 symbols: &#123;&#125;&quot;.format(e) + COLOR_RESET)
+
+        # 然后加载.debug文件夹中的符号
+        print(COLOR_GREEN + &quot;[*] Loading debug symbols from: &#123;&#125;&quot;.format(debug_dir) + COLOR_RESET)
+        load_symbols_recursive(debug_dir)
+
+LoadLibcDebugSymbols()</code></pre>
+
+<blockquote>
+<p>用法:loadlibc [libc路径]</p>
+<p>会自动查找libc路径下的.debug文件夹并且加载符号 </p>
+</blockquote>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

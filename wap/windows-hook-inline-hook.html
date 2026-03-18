@@ -1,0 +1,83 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>windows hook - inline hook</title>
+</head>
+<body>
+<b>windows hook - inline hook</b><br>
+<small>2025-05-23</small>
+<hr>
+<p>inline hook 内联钩子是一种常用的钩子</p>
+<p>其原理是直接把函数开头改成一个JMP ，后跟我们的hook函数地址</p>
+<p>在hook函数里就随后恢复我们的原始字节 并跳到原函数执行 随后直接再次改成JMP挂钩</p>
+<p>一般来说在windows内程序代码应该都是不可写的 需要使用VirtualProtect函数来改权限</p>
+<pre><code>BOOL
+WINAPI
+VirtualProtect(
+    _In_  LPVOID lpAddress,
+    _In_  SIZE_T dwSize,
+    _In_  DWORD flNewProtect,
+    _Out_ PDWORD lpflOldProtect
+    )
+&#123;
+    return VirtualProtectFromApp (lpAddress, dwSize, flNewProtect, lpflOldProtect);
+&#125;</code></pre>
+
+<p>简单的poc</p>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;windows.h&gt;
+
+BYTE original_code[14];
+void hook(ULONG_PTR addr, ULONG_PTR target);
+void unhook(ULONG_PTR addr, BYTE* original);
+
+int print_custom() &#123;
+    std::cout &lt;&lt; &quot;Hello World!\n&quot;;
+    return 0;
+&#125;
+
+int print_hook() &#123;
+    std::cout &lt;&lt; &quot;you are hooked!&quot; &lt;&lt; std::endl;
+    unhook((ULONG_PTR)&amp;print_custom, original_code);
+    print_custom();
+    hook((ULONG_PTR)&amp;print_custom, (ULONG_PTR)&amp;print_hook);
+    return 0;
+&#125;
+
+int main()
+&#123;
+    ULONG_PTR print_addr = (ULONG_PTR)&amp;print_custom;
+    std::cout &lt;&lt;&quot;[+]print_addr=&gt;&quot; &lt;&lt; std::hex &lt;&lt; print_addr &lt;&lt; std::endl;
+    ULONG_PTR print_hook_addr = (ULONG_PTR)&amp;print_hook;
+    std::cout &lt;&lt; &quot;[+]print_hook=&gt;&quot; &lt;&lt; std::hex &lt;&lt; print_hook_addr &lt;&lt; std::endl;
+
+    DWORD dwOldProtect;
+
+    VirtualProtect((LPVOID)print_addr, 0x233, 64, &amp;dwOldProtect);
+    memcpy((void*)(&amp;original_code), (void*)(print_addr), 14);
+    hook(print_addr, print_hook_addr);
+    
+    int qwq = print_custom();
+    int qwq1 = print_custom();
+    system(&quot;pause&quot;);
+
+&#125;
+
+void hook(ULONG_PTR addr,ULONG_PTR target)&#123;
+    BYTE jmp_code[14] = &#123;
+   0xFF, 0x25, 0x00, 0x00, 0x00, 0x00,  // ; jmp qword ptr [rip + 0x0]
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00  // 后跟绝对地址
+    &#125;;
+    memcpy((void*)&amp;jmp_code[6], (void*)&amp;target, 8);
+    memcpy((void*)(addr), &amp;jmp_code, 14);
+&#125;
+
+void unhook(ULONG_PTR addr, BYTE* original) &#123;
+    memcpy((void*)addr, original, 14);
+&#125;</code></pre>
+
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

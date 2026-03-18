@@ -1,0 +1,36 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>从0开始的web生涯 - [SWPUCTF 2021 新生赛]ez_unserialize</title>
+</head>
+<body>
+<b>从0开始的web生涯 - [SWPUCTF 2021 新生赛]ez_unserialize</b><br>
+<small>2025-04-27</small>
+<hr>
+<p>看题目是反序列化的，反序列化应该是有点像python的数组转JSON，因为PHP我记得是运行时语言(?好像是这样叫，有可能加个分号什么的可以执行命令</p>
+<p>打开只有一只可爱的胡桃。</p>
+<p><br><br><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/image-20250427141203475.png" width="200"><br>
+<br>
+</p>
+<p>直接开扫</p>
+<p><br><br><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/image-20250427141223947.png" width="200"><br>
+<br>
+</p>
+<p>flag.php进去空白的 </p>
+<p>根据我的百度seo经验 robots.txt一般有货 robots.txt是让搜索引擎爬虫看的</p>
+<p><br><br><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/image-20250427141305756.png" width="200"><br>
+<br>
+</p>
+<p><br><br><img src="/2025/04/27/%E4%BB%8E0%E5%BC%80%E5%A7%8B%E7%9A%84web%E7%94%9F%E6%B6%AF-SWPUCTF-2021-%E6%96%B0%E7%94%9F%E8%B5%9B-ez-unserialize/image-20250427141322216.png" width="200"><br>
+<br>
+</p>
+<p>找到题目了</p>
+<p>O:4:”wllm”:2:{s:5:”admin”;s:5:”admin”;s:6:”passwd”;s:3:”ctf”;}</p>
+<p>因为不是new 一个对象 而是直接反序列化 所以_construct 构造函数不会执行</p>
+<p>可以手搓序列化 : O 类名字符数 类名后面的是属性 </p>
+<p>得到flag</p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

