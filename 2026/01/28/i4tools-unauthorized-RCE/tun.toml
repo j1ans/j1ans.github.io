@@ -1,0 +1,12 @@
+serverAddr = "47.242.104.36"
+serverPort = 7000
+auth.token = "FrpLogin123456@!" # 必须与你服务端的 token 一致
+
+[[proxies]]
+name = "back_socks5"
+type = "tcp"
+remotePort = 20000        # 这是你在公网服务器上开启的代理入口端口
+[proxies.plugin]
+type = "socks5"
+user = "rick"       # 强烈建议设置，防止被他人扫描利用
+password = "BackEndFrp123123@!"
